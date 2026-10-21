@@ -273,14 +273,16 @@ export default function Layout() {
     navigate('/')
   }
 
+  const esInicio = location.pathname === '/dashboard' || location.pathname === '/dashboard/'
+
   const titulo = useMemo(() => {
     const opcion = items.find((item) => item.to === location.pathname)
     if (opcion) return opcion.label
-    if (location.pathname === '/dashboard' || location.pathname === '/dashboard/') {
+    if (esInicio) {
       return 'Inicio'
     }
     return APP_NAME
-  }, [items, location.pathname])
+  }, [items, location.pathname, esInicio])
 
   const iniciales = useMemo(() => {
     const base = correo.split('@')[0]?.trim() ?? ''
@@ -389,7 +391,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="main">
+        <main className={esInicio ? 'main main--inicio' : 'main'}>
           <div className="main-contenido">
             <Outlet />
           </div>

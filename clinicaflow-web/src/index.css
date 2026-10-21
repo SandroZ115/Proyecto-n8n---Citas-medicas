@@ -566,6 +566,13 @@ a:focus-visible {
   .main {
     padding: 20px 16px 40px;
   }
+
+  .main--inicio::before {
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    width: 140px;
+  }
 }
 
 .recuadro {
@@ -690,7 +697,7 @@ a:focus-visible {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.14;
+  opacity: 0.24;
   pointer-events: none;
 }
 
@@ -877,6 +884,32 @@ a:focus-visible {
   }
 }
 
+/* Inicio */
+
+.main--inicio {
+  position: relative;
+}
+
+.main--inicio::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  bottom: 16px;
+  width: 200px;
+  background-image: url('./images/caduceo.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.main--inicio > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* Reportes */
 
 .reportes-controles {
@@ -981,6 +1014,11 @@ a:focus-visible {
   .menu,
   .barra,
   .no-imprimir {
+    display: none !important;
+  }
+
+  .main--inicio::before,
+  .login-panel::before {
     display: none !important;
   }
 
