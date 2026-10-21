@@ -1,6 +1,8 @@
+import { notificarSesionVencida } from './sesion'
+
 const BASE = '/api'
 
-async function request(url, { method = 'GET', headers = {}, body } = {}) {
+async function request(url, { method = 'GET', headers = {}, body, sinSesion = false } = {}) {
   let res
   try {
     res = await fetch(url, {
@@ -22,6 +24,10 @@ async function request(url, { method = 'GET', headers = {}, body } = {}) {
     data = null
   }
 
+  if (res.status === 401 && !sinSesion) {
+    notificarSesionVencida()
+  }
+
   return { ok: res.ok, status: res.status, data }
 }
 
@@ -29,6 +35,7 @@ export function login(correo, password, codigo_totp) {
   return request(`${BASE}/login`, {
     method: 'POST',
     body: { correo, password, codigo_totp },
+    sinSesion: true,
   })
 }
 
@@ -86,6 +93,7 @@ export function aprobarCita(cita_id, codigo_totp) {
     method: 'POST',
     headers: { Authorization: `Bearer ${tokenActual()}` },
     body: { cita_id, codigo_totp },
+    sinSesion: true,
   })
 }
 

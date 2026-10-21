@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminUsuarios, desbloquearUsuario } from '../services/api'
+import { cerrarSesionVencida } from '../services/sesion'
 
 export default function Usuarios() {
   const navigate = useNavigate()
@@ -24,8 +25,7 @@ export default function Usuarios() {
     if (status === 200) {
       setUsuarios(data?.usuarios ?? [])
     } else if (status === 401) {
-      sessionStorage.clear()
-      navigate('/')
+      cerrarSesionVencida(navigate)
       return
     } else if (status === 403) {
       navigate('/dashboard')
@@ -52,8 +52,7 @@ export default function Usuarios() {
       if (status === 200) {
         setMensaje(data?.mensaje ?? 'Operación realizada')
       } else if (status === 401) {
-        sessionStorage.clear()
-        navigate('/')
+        cerrarSesionVencida(navigate)
         return
       } else if (status === 403) {
         navigate('/dashboard')
@@ -81,8 +80,7 @@ export default function Usuarios() {
       if (status === 200) {
         setMensaje(data?.mensaje ?? 'Usuario desbloqueado')
       } else if (status === 401) {
-        sessionStorage.clear()
-        navigate('/')
+        cerrarSesionVencida(navigate)
         return
       } else if (status === 403) {
         navigate('/dashboard')

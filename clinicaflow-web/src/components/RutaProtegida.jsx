@@ -41,7 +41,7 @@ export default function RutaProtegida({ children }) {
   }
 
   if (!autorizado) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" replace state={{ vencida: true }} />
   }
 
   return children

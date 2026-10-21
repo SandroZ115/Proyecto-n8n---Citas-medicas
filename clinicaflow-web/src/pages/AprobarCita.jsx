@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listarPendientes, aprobarCita } from '../services/api'
+import { cerrarSesionVencida } from '../services/sesion'
 
 function fechaLegible(valor) {
   if (!valor) return ''
@@ -27,8 +28,7 @@ export default function AprobarCita() {
       if (!activo) return
 
       if (status === 401) {
-        sessionStorage.clear()
-        navigate('/', { replace: true })
+        cerrarSesionVencida(navigate)
         return
       }
 

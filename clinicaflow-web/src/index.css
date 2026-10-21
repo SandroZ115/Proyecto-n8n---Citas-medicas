@@ -270,28 +270,40 @@ a:focus-visible {
 }
 
 .menu {
-  width: 220px;
+  width: 260px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   background: var(--sidebar);
-  padding: 20px 16px;
+  padding: 22px 14px;
+}
+
+.menu-cabecera {
+  padding: 0 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .menu-titulo {
-  margin: 0 0 20px;
-  font-size: 20px;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
   color: #FFFFFF;
 }
 
-.menu nav {
+.menu-nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .menu-enlace {
+  position: relative;
   display: flex;
   align-items: center;
-  min-height: 44px;
+  gap: 12px;
+  min-height: 46px;
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid transparent;
@@ -312,6 +324,35 @@ a:focus-visible {
   font-weight: 500;
 }
 
+.menu-enlace.activo::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #FFFFFF;
+}
+
+.menu-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.menu-icono svg {
+  width: 24px;
+  height: 24px;
+}
+
+.menu-velo {
+  display: none;
+}
+
 .contenido {
   flex: 1;
   display: flex;
@@ -320,6 +361,7 @@ a:focus-visible {
 }
 
 .barra {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -329,14 +371,193 @@ a:focus-visible {
   border-bottom: 1px solid var(--line);
 }
 
-.barra .rol {
+.barra-izquierda {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.barra-titulo {
   margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barra-derecha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.boton-menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.boton-menu:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.boton-menu svg {
+  width: 22px;
+  height: 22px;
+}
+
+.usuario {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.usuario-correo {
   font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.usuario-inicial {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.usuario-menu-boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
   color: var(--muted);
+  cursor: pointer;
+}
+
+.usuario-menu-boton:hover {
+  background: var(--primary-soft);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.usuario-menu-boton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.usuario-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(15, 42, 34, 0.16);
+}
+
+.usuario-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.usuario-menu-item:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .main {
-  padding: 24px;
+  padding: 32px 24px 56px;
+}
+
+.main-contenido {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+@media (max-width: 860px) {
+  .menu {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    width: 260px;
+    padding-top: 24px;
+    background: rgba(15, 42, 34, 0.96);
+    transform: translateX(-100%);
+    visibility: hidden;
+    transition: transform 0.2s ease, visibility 0.2s ease;
+  }
+
+  .menu--abierto {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .menu-velo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(15, 42, 34, 0.45);
+  }
+
+  .boton-menu {
+    display: inline-flex;
+  }
+
+  .barra {
+    padding: 10px 16px;
+  }
+
+  .usuario-correo {
+    display: none;
+  }
+
+  .main {
+    padding: 20px 16px 40px;
+  }
 }
 
 .recuadro {

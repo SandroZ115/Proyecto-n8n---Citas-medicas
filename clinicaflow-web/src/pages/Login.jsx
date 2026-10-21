@@ -182,6 +182,7 @@ export default function Login() {
         sessionStorage.setItem('token', data?.token ?? '')
         sessionStorage.setItem('rol', data?.rol ?? '')
         sessionStorage.setItem('expira_en', data?.expira_en ?? '')
+        sessionStorage.setItem('correo', data?.correo ?? '')
         navigate('/dashboard')
         return
       }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminUsuarios, reporteMensual } from '../services/api'
+import { cerrarSesionVencida } from '../services/sesion'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -236,8 +237,7 @@ export default function Reportes() {
       toast.error(data?.error ?? 'No se pudo cargar el listado de usuarios')
 
       if (status === 401) {
-        sessionStorage.clear()
-        navigate('/', { replace: true })
+        cerrarSesionVencida(navigate)
         return
       }
 
@@ -290,8 +290,7 @@ export default function Reportes() {
     }
 
     if (status === 401) {
-      sessionStorage.clear()
-      navigate('/', { replace: true })
+      cerrarSesionVencida(navigate)
       return
     }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { agenda, listarEspecialidades } from '../services/api'
+import { cerrarSesionVencida } from '../services/sesion'
 
 function fechaISO(d) {
   const anio = d.getFullYear()
@@ -81,8 +82,7 @@ export default function Agenda() {
   const [enviando, setEnviando] = useState(false)
 
   function sesionExpirada() {
-    sessionStorage.clear()
-    navigate('/', { replace: true })
+    cerrarSesionVencida(navigate)
   }
 
   async function cargarListado() {
