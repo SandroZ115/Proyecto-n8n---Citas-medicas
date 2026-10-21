@@ -1,0 +1,77 @@
+{
+  "name": "Procesamiento",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        16
+      ],
+      "id": "c3b49f27-79fe-4a0b-904e-7997a93aaae8",
+      "name": "Revisa pendientes"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH pendiente AS (\n  SELECT id, especialidad, especialidad_id\n  FROM solicitudes_citas\n  WHERE estado = 'pendiente' AND doctor_id IS NULL\n  ORDER BY CASE urgencia WHEN 'alta' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, id\n  LIMIT 1\n  FOR UPDATE SKIP LOCKED\n),\nesp AS (\n  SELECT p.id AS cita_id, COALESCE(p.especialidad_id, e.id) AS esp_id\n  FROM pendiente p\n  LEFT JOIN especialidades e\n    ON lower(e.nombre) = lower(CASE WHEN p.especialidad = 'General' THEN 'Medicina General' ELSE p.especialidad END)\n),\nelegido AS (\n  SELECT s.slot, u.id AS doctor_id\n  FROM esp\n  JOIN usuarios u ON u.rol = 'doctor' AND u.especialidad_id = esp.esp_id\n  JOIN especialidades e2 ON e2.id = u.especialidad_id AND e2.activo\n  CROSS JOIN generate_series(\n    date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL '1 hour',\n    date_trunc('hour', now() AT TIME ZONE 'UTC') + INTERVAL '14 days',\n    INTERVAL '30 minutes') AS s(slot)\n  WHERE EXTRACT(isodow FROM s.slot) BETWEEN 1 AND 5\n    AND s.slot::time BETWEEN TIME '14:00' AND TIME '22:30'\n    AND NOT EXISTS (\n      SELECT 1 FROM solicitudes_citas c\n      WHERE c.doctor_id = u.id AND c.estado <> 'cancelada'\n        AND tsrange(c.horario_asignado, c.horario_asignado + INTERVAL '30 minutes')\n            && tsrange(s.slot, s.slot + INTERVAL '30 minutes')\n    )\n  ORDER BY s.slot, u.id\n  LIMIT 1\n)\nUPDATE solicitudes_citas c\nSET doctor_id = el.doctor_id,\n    horario_asignado = el.slot,\n    especialidad_id = esp.esp_id,\n    estado = CASE WHEN el.doctor_id IS NULL THEN 'sin_asignar' ELSE 'pendiente_aprobacion' END\nFROM esp\nLEFT JOIN elegido el ON TRUE\nWHERE c.id = esp.cita_id\nRETURNING c.id, c.estado, c.doctor_id, c.horario_asignado;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -128,
+        16
+      ],
+      "id": "110bf53b-a4a6-4f36-8b0e-92ed4cee0046",
+      "name": "Asignar doctor y horario",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Revisa pendientes": {
+      "main": [
+        [
+          {
+            "node": "Asignar doctor y horario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asignar doctor y horario": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8148bfdc-b64a-44e9-9567-ced85cea0926",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "L1Cm3eHutmcqP8Ab",
+  "tags": []
+}

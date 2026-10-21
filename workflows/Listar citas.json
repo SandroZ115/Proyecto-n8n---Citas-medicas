@@ -1,0 +1,230 @@
+{
+  "name": "Listar citas",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "listar-citas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "97b0d5ff-93a0-44f1-a8fa-f4a964531a13",
+      "name": "Recibir listado",
+      "webhookId": "96d2a7ff-62ec-4c0c-bd50-89f00afddb4d"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT usuario_id, rol FROM sesiones\nWHERE token = $1 AND expira_en > NOW() AND rol = 'doctor';",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "265482e4-619e-4a32-9b5d-eee86182fba3",
+      "name": "Buscar sesion doctor",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2a18c02e-884e-45ea-909a-0ad634610726",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "2762f875-e377-4513-b679-ec8480ff81ee",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Sesión inválida o sin permiso\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        752,
+        160
+      ],
+      "id": "5f44f5a8-6a08-4f57-93bd-323d5ccf2d07",
+      "name": "Rechazar - Sin sesion"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, nombre_paciente, especialidad, urgencia, horario_asignado\nFROM solicitudes_citas\nWHERE estado = 'pendiente_aprobacion' AND doctor_id = $1::int\nORDER BY CASE urgencia WHEN 'alta' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,\n         horario_asignado, id;",
+        "options": {
+          "queryReplacement": "={{ $('Buscar sesion doctor').first().json.usuario_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        736,
+        -304
+      ],
+      "id": "35221f51-b7ab-47bd-8354-78742122adef",
+      "name": "Sesion valida",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const citas = $input.all().map(i => i.json).filter(c => c.id);\nreturn [{ json: { citas } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -304
+      ],
+      "id": "106b1d15-aa1c-4c5a-a3a4-cc30b22769a2",
+      "name": "Armar respuesta"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1184,
+        -304
+      ],
+      "id": "c0970120-fa0e-4b0e-8ec6-2c7e17a26d67",
+      "name": "Listado OK"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir listado": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion doctor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion doctor": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Sesion valida",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sesion valida": {
+      "main": [
+        [
+          {
+            "node": "Armar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar respuesta": {
+      "main": [
+        [
+          {
+            "node": "Listado OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a7afd3b2-fb3b-4259-a02d-0a25ebf9d231",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "qzBHXnZt6ulbKTOv",
+  "tags": []
+}

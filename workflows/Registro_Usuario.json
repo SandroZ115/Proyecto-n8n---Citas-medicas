@@ -1,0 +1,604 @@
+{
+  "name": "Registro_Usuario",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "registro-usuario",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -416,
+        16
+      ],
+      "id": "c015d298-af07-413f-ab30-542107cdafe4",
+      "name": "Webhook",
+      "webhookId": "95c6293a-3c66-4e6c-890e-b8adb74a3f15"
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nfunction generarSecretoBase32(longitud = 16) {\n  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';\n  let secreto = '';\n  for (let i = 0; i < longitud; i++) {\n    secreto += alfabeto[Math.floor(Math.random() * alfabeto.length)];\n  }\n  return secreto;\n}\n\nfunction hashPassword(password, salt) {\n  return crypto.createHash('sha256').update(password + salt).digest('hex');\n}\n\nfunction generarCodigosRespaldo(cantidad = 8) {\n  const codigos = [];\n  for (let i = 0; i < cantidad; i++) {\n    const parte1 = crypto.randomBytes(2).toString('hex').toUpperCase();\n    const parte2 = crypto.randomBytes(2).toString('hex').toUpperCase();\n    codigos.push(`${parte1}-${parte2}`);\n  }\n  return codigos;\n}\n\nconst body = $('Webhook').first().json.body;\nconst salt = crypto.randomBytes(8).toString('hex');\nconst passwordHash = hashPassword(body.password, salt);\nconst totpSecret = generarSecretoBase32();\nconst codigosRespaldo = generarCodigosRespaldo();\n\nreturn {\n  json: {\n    correo: body.correo,\n    password_hash: passwordHash,\n    salt: salt,\n    rol: body.rol,\n    especialidad_id: body.rol === 'doctor' ? Number(body.especialidad_id) : null,\n    totp_secret: totpSecret,\n    codigos_respaldo: codigosRespaldo\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        0
+      ],
+      "id": "d3f77010-12ad-49e2-8171-57d455178c6a",
+      "name": "Generar Credenciales"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ mensaje: \"Usuario registrado\", totp_secret: $('Generar Credenciales').item.json.totp_secret, codigos_respaldo: $('Generar Credenciales').item.json.codigos_respaldo }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1808,
+        80
+      ],
+      "id": "e0b0861b-8adb-4877-a230-5eb34eff2950",
+      "name": "Confirmar registro"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "name",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "usuarios",
+          "mode": "list",
+          "cachedResultName": "usuarios"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "correo": "={{ $json.correo }}",
+            "password_hash": "={{ $json.password_hash }}",
+            "salt": "={{ $json.salt }}",
+            "rol": "={{ $json.rol }}",
+            "totp_secret": "={{ $json.totp_secret }}",
+            "especialidad_id": "={{ $json.especialidad_id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "password_hash",
+              "displayName": "password_hash",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "salt",
+              "displayName": "salt",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "totp_secret",
+              "displayName": "totp_secret",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "intentos_fallidos",
+              "displayName": "intentos_fallidos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "bloqueado_hasta",
+              "displayName": "bloqueado_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "doctor_id",
+              "displayName": "doctor_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "especialidad_id",
+              "displayName": "especialidad_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1008,
+        0
+      ],
+      "id": "39356abd-56f2-41be-a9ef-8bd489877afd",
+      "name": "Guardar usuario",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const codigos = $('Generar Credenciales').item.json.codigos_respaldo;\nconst usuarioId = $input.item.json.id;\n\nconst items = [];\nfor (const codigo of codigos) {\n  items.push({ json: { usuario_id: usuarioId, codigo: codigo } });\n}\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "e45fa845-d89d-4688-ad9f-99d0cdd5648d",
+      "name": "Preparar codigos"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "codigos_respaldo",
+          "mode": "list",
+          "cachedResultName": "codigos_respaldo"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "usuario_id": "={{ $json.usuario_id }}",
+            "codigo": "={{ $json.codigo }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "codigo",
+              "displayName": "codigo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usado",
+              "displayName": "usado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "usado_en",
+              "displayName": "usado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "f285db49-f2bf-47c8-8c88-6f096c429bb2",
+      "name": "codigos respaldo",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Requiere rol admin\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        320
+      ],
+      "id": "b1053be2-ca3a-442c-8ec9-01482daaa6a2",
+      "name": "Rechazar - Sin permiso"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5ff1183b-0cd9-4f83-8e1b-6d422b80fd13",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        32,
+        16
+      ],
+      "id": "5c65dc98-c0e3-4257-a970-387f7fb5ed24",
+      "name": "Es admin"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT usuario_id, rol FROM sesiones\nWHERE token = $1 AND expira_en > NOW() AND rol = 'admin';",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "fcfee80d-4ade-4669-b79f-557baeab5539",
+      "name": "Buscar sesion admin",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT ($1 IN ('doctor','secretaria','admin')\n  AND ($1 <> 'doctor' OR EXISTS (\n    SELECT 1 FROM especialidades WHERE id = $2::int AND activo))) AS valido;",
+        "options": {
+          "queryReplacement": "={{ $('Webhook').first().json.body.rol || 'sin-rol' }}, {{ $('Webhook').first().json.body.especialidad_id || 0 }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        256,
+        16
+      ],
+      "id": "8377f0fc-f53a-48bd-8df4-98667cb2809b",
+      "name": "Validar datos",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0fe3df39-fc0b-4093-9476-51c568eeff39",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        480,
+        16
+      ],
+      "id": "3f31bead-f5d3-40d3-9a8b-3486b9468ff6",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Rol inválido o falta una especialidad activa para el doctor\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        704,
+        272
+      ],
+      "id": "3cc98e71-3343-47a9-bc23-e510b90d265f",
+      "name": "Datos validos"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar Credenciales": {
+      "main": [
+        [
+          {
+            "node": "Guardar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar usuario": {
+      "main": [
+        [
+          {
+            "node": "Preparar codigos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar codigos": {
+      "main": [
+        [
+          {
+            "node": "codigos respaldo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "codigos respaldo": {
+      "main": [
+        [
+          {
+            "node": "Confirmar registro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es admin": {
+      "main": [
+        [
+          {
+            "node": "Validar datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin permiso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion admin": {
+      "main": [
+        [
+          {
+            "node": "Es admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar datos": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Generar Credenciales",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Datos validos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b6c951e8-681f-4102-b772-5b0d85feb337",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "yj64Hxhz5KTKmm58",
+  "tags": []
+}

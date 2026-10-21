@@ -1,0 +1,584 @@
+{
+  "name": "Agenda",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agenda",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5b28b1d2-3358-466b-a93f-c36b4bd48c0f",
+      "name": "Recibir agenda",
+      "webhookId": "1d637e86-ef29-4888-aafe-f93d29f6620f"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT usuario_id, rol FROM sesiones\nWHERE token = $1 AND expira_en > NOW() AND rol IN ('doctor','secretaria','admin');",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "a2613797-ee64-4557-b473-251b3f0f86f4",
+      "name": "Buscar sesion",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "de5a4f64-d25a-4a0c-8279-a21d855067f0",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "1028eae4-38e7-4c3a-b54d-baa87399d964",
+      "name": "Sesion valida"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Sesión inválida o sin permiso\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        688,
+        240
+      ],
+      "id": "584040d2-5a99-41c1-a5b9-c63f076449d3",
+      "name": "Rechazar - Sin sesion"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Recibir agenda').first().json.body || {};\nconst sesion = $('Buscar sesion').first().json;\nconst esDoctor = sesion.rol === 'doctor';\n\nconst hoy = new Date();\nhoy.setUTCHours(0, 0, 0, 0);\nconst porDefecto = { desde: hoy, hasta: new Date(hoy.getTime() + 30 * 24 * 3600 * 1000) };\n\nfunction fecha(valor, def) {\n  const d = valor ? new Date(valor) : def;\n  return isNaN(d.getTime()) ? def : d;\n}\nconst fmt = d => d.toISOString().slice(0, 19).replace('T', ' ');\n\nconst accion = String(body.accion || 'listar').trim().toLowerCase();\nconst citaId = Number(body.cita_id || 0);\nconst valida = ['listar', 'cancelar', 'completar', 'sin_asignar'].includes(accion)\n  && (accion === 'listar' || accion === 'sin_asignar' || citaId > 0);\n\nreturn [{\n  json: {\n    accion,\n    accion_valida: valida,\n    rol: sesion.rol,\n    usuario_id: Number(sesion.usuario_id),\n    cita_id: citaId,\n    desde: fmt(fecha(body.desde, porDefecto.desde)),\n    hasta: fmt(fecha(body.hasta, porDefecto.hasta)),\n    doctor_filtro: esDoctor ? Number(sesion.usuario_id) : Number(body.doctor_id || 0),\n    especialidad_filtro: Number(body.especialidad_id || 0)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        -128
+      ],
+      "id": "13863ffb-7d10-4eae-819b-8cd4dbfc2aaf",
+      "name": "Preparar datos"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fc2ba56f-c6fe-4de7-91a8-58d98508cf8d",
+              "leftValue": "={{ $json.accion_valida }}",
+              "rightValue": "listar",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        -128
+      ],
+      "id": "4ee7bf0f-3af0-447a-ad0b-d870431b0406",
+      "name": "Accion valida"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Acción no válida\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1280,
+        144
+      ],
+      "id": "b9f729f4-bbeb-4fd8-9e23-77f518cc3eb4",
+      "name": "Rechazar - Accion"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "520565c7-cbf3-4a66-a518-12504f1c7712",
+              "leftValue": "={{ $json.accion }}",
+              "rightValue": "listar",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1520,
+        -528
+      ],
+      "id": "281032b9-c8a8-419f-a5c5-83e362b6f57f",
+      "name": "Es listado"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.nombre_paciente, c.urgencia, c.estado,\n       c.horario_asignado, c.horario_fin, c.doctor_id,\n       u.correo AS doctor, e.nombre AS especialidad\nFROM solicitudes_citas c\nLEFT JOIN usuarios u ON u.id = c.doctor_id\nLEFT JOIN especialidades e ON e.id = c.especialidad_id\nWHERE c.doctor_id IS NOT NULL\n  AND c.horario_asignado >= $1::timestamp\n  AND c.horario_asignado <  $2::timestamp\n  AND ($3::int = 0 OR c.doctor_id = $3::int)\n  AND ($4::int = 0 OR c.especialidad_id = $4::int)\nORDER BY c.horario_asignado, c.id;",
+        "options": {
+          "queryReplacement": "={{ $('Preparar datos').first().json.desde }}, {{ $('Preparar datos').first().json.hasta }}, {{ $('Preparar datos').first().json.doctor_filtro }}, {{ $('Preparar datos').first().json.especialidad_filtro }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1904,
+        -752
+      ],
+      "id": "510c3330-6b86-445c-8f5d-aa7bca14fdfa",
+      "name": "Listar agenda",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const citas = $input.all().map(i => i.json).filter(c => c.id);\nreturn [{ json: { citas } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        -752
+      ],
+      "id": "4b0548b0-06ee-46d9-9178-814ef9eee27a",
+      "name": "Armar respuesta"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2352,
+        -752
+      ],
+      "id": "42f97b22-3916-47ed-8ee1-7a8af4b3b05f",
+      "name": "Agenda OK"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE solicitudes_citas\nSET estado = CASE $2 WHEN 'cancelar' THEN 'cancelada' ELSE 'completada' END\nWHERE id = $1::int\n  AND estado NOT IN ('cancelada', 'completada')\n  AND (\n       ($3 = 'doctor' AND doctor_id = $4::int)\n    OR  $3 = 'admin'\n    OR ($3 = 'secretaria' AND $2 = 'cancelar')\n  )\n  AND ($2 <> 'completar' OR estado IN ('asignada', 'notificada', 'recordada'))\nRETURNING id, estado;",
+        "options": {
+          "queryReplacement": "={{ $('Preparar datos').first().json.cita_id }}, {{ $('Preparar datos').first().json.accion }}, {{ $('Preparar datos').first().json.rol }}, {{ $('Preparar datos').first().json.usuario_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1856,
+        -272
+      ],
+      "id": "c581d134-e0a8-4777-9315-363a5247cee2",
+      "name": "Cambiar estado",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d8e5133a-0b92-44c9-a8da-971b7250b2c9",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2080,
+        -272
+      ],
+      "id": "a4eb55d4-29c7-4d64-9441-70334fb38124",
+      "name": "Se aplico"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"No se pudo: la cita no existe, no te corresponde o ya está cerrada\"}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2320,
+        -80
+      ],
+      "id": "d7d7a227-af49-4630-a489-7e413ba80fc5",
+      "name": "Rechazar - No aplicado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ mensaje: \"Cita actualizada\", cita: $json }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2304,
+        -368
+      ],
+      "id": "669d7473-cb8c-472f-bff5-3149c4215647",
+      "name": "Estado actualizado"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c82e59f0-1e92-427b-8c94-2eda03cb24fa",
+              "leftValue": "={{ $json.accion }}",
+              "rightValue": "sin_asignar",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1232,
+        -384
+      ],
+      "id": "5ea53dcf-ef3b-48f6-9acc-8e0937be73f9",
+      "name": "Es sin asignar"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT c.id, c.nombre_paciente, c.especialidad, c.urgencia, c.estado\nFROM solicitudes_citas c\nWHERE c.estado = 'sin_asignar' AND $1::text IN ('secretaria', 'admin')\nORDER BY CASE c.urgencia WHEN 'alta' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, c.id;",
+        "options": {
+          "queryReplacement": "={{ $('Preparar datos').first().json.rol }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1536,
+        -176
+      ],
+      "id": "cc25485d-7ba1-4793-a996-2fe301bef6a8",
+      "name": "Listar sin asignar",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir agenda": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion": {
+      "main": [
+        [
+          {
+            "node": "Sesion valida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sesion valida": {
+      "main": [
+        [
+          {
+            "node": "Preparar datos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar datos": {
+      "main": [
+        [
+          {
+            "node": "Accion valida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accion valida": {
+      "main": [
+        [
+          {
+            "node": "Es sin asignar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Accion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es listado": {
+      "main": [
+        [
+          {
+            "node": "Listar agenda",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cambiar estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar agenda": {
+      "main": [
+        [
+          {
+            "node": "Armar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar respuesta": {
+      "main": [
+        [
+          {
+            "node": "Agenda OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cambiar estado": {
+      "main": [
+        [
+          {
+            "node": "Se aplico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Se aplico": {
+      "main": [
+        [
+          {
+            "node": "Estado actualizado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - No aplicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es sin asignar": {
+      "main": [
+        [
+          {
+            "node": "Listar sin asignar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Es listado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar sin asignar": {
+      "main": [
+        [
+          {
+            "node": "Armar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "66cc95eb-c33f-4cec-bfc8-27324c5b83ef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "P4Mb7cjagrVatJ37",
+  "tags": []
+}

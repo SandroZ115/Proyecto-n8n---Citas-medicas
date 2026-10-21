@@ -1,0 +1,237 @@
+{
+  "name": "Salida",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "02c4e939-cf2c-4669-8d44-a7d90d6bd430",
+      "name": "Revisar asignadas"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM solicitudes_citas WHERE estado = 'asignada';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d9edff94-324b-492c-8e45-57796d168835",
+      "name": "Traer citas asignadas",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst mensaje = `Estimado/a ${item.nombre_paciente}, su cita de ${item.especialidad} ha sido confirmada.`;\n\nreturn {\n  json: {\n    ...item,\n    mensaje_sms: mensaje,\n    notificado_en: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "8ee53445-9b7e-4ba5-85d9-0e3aa82b5751",
+      "name": "Generar mensaje SMS"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "bitacora",
+          "mode": "list",
+          "cachedResultName": "bitacora"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cita_id": "={{ $json.id }}",
+            "accion": "notificacion_enviada",
+            "detalle": "={{ $json.mensaje_sms }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "cita_id",
+              "displayName": "cita_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "accion",
+              "displayName": "accion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "detalle",
+              "displayName": "detalle",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "fecha",
+              "displayName": "fecha",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        672,
+        0
+      ],
+      "id": "bcf1e744-f466-4880-8990-34e540be06f6",
+      "name": "Registrar Notificacion",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE solicitudes_citas SET estado = 'notificada' WHERE id = $1 RETURNING id;",
+        "options": {
+          "queryReplacement": "={{ $json.cita_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        896,
+        0
+      ],
+      "id": "fe1d76f4-bb95-41f4-9bdb-7a8d9f6577e6",
+      "name": "Marcar notificada",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Revisar asignadas": {
+      "main": [
+        [
+          {
+            "node": "Traer citas asignadas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traer citas asignadas": {
+      "main": [
+        [
+          {
+            "node": "Generar mensaje SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar mensaje SMS": {
+      "main": [
+        [
+          {
+            "node": "Registrar Notificacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar Notificacion": {
+      "main": [
+        [
+          {
+            "node": "Marcar notificada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a521b64f-ab35-4524-b425-9fd6b92d1c88",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "FcHDBo3zErmzXQfv",
+  "tags": []
+}

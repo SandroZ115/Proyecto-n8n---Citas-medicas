@@ -1,0 +1,988 @@
+{
+  "name": "Login",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "login",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -528,
+        160
+      ],
+      "id": "9fa2094b-ff99-4de1-92be-841847b7d88a",
+      "name": "Recibir login",
+      "webhookId": "ddedd20d-41d5-4500-b8ec-08ea4c83ae6a"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM usuarios WHERE correo = $1;",
+        "options": {
+          "queryReplacement": "={{ $json.body.correo }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -304,
+        160
+      ],
+      "id": "9df8dbab-6b3f-42df-ae42-85f764b648c4",
+      "name": "Buscar usuario",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d43336da-dac2-4bdf-a388-f9d31fb6bc86",
+              "leftValue": "={{ $json.id.toString() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -80,
+        160
+      ],
+      "id": "bda58bbd-bac9-4bfb-a7a1-53d33ea0f03e",
+      "name": "Usuario existe"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Credenciales inválidas\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        368,
+        208
+      ],
+      "id": "40bb541c-787f-42b3-b3a2-54f72cd56ae4",
+      "name": "Rechazar - Usuario no encontrado"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst item = $input.item.json;\nconst passwordRecibida = $('Recibir login').item.json.body.password;\nconst salt = item.salt;\nconst hashEsperado = item.password_hash;\n\nconst hashCalculado = crypto.createHash('sha256').update(passwordRecibida + salt).digest('hex');\nconst passwordValida = hashCalculado === hashEsperado;\n\nreturn {\n  json: {\n    ...item,\n    password_valida: passwordValida\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        -352
+      ],
+      "id": "3995c12e-d7d9-4dcc-8528-fbf74721ae4b",
+      "name": "Validar password"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ad9f3133-d8d7-4fa2-a0a3-f032042268a0",
+              "leftValue": "={{ $json.password_valida }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        -352
+      ],
+      "id": "d9adc530-8b18-4b7c-988e-beb8b41f89ef",
+      "name": "Password correcta"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function base32Decode(base32) {\n  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';\n  let bits = '';\n  for (const char of base32.toUpperCase()) {\n    const val = alfabeto.indexOf(char);\n    if (val === -1) continue;\n    bits += val.toString(2).padStart(5, '0');\n  }\n  const bytes = [];\n  for (let i = 0; i + 8 <= bits.length; i += 8) {\n    bytes.push(parseInt(bits.substr(i, 8), 2));\n  }\n  return Buffer.from(bytes);\n}\n\nfunction generarTOTP(secretBase32) {\n  const crypto = require('crypto');\n  const step = 30;\n  const tiempo = Math.floor(Date.now() / 1000 / step);\n  const buffer = Buffer.alloc(8);\n  buffer.writeBigInt64BE(BigInt(tiempo));\n  const key = base32Decode(secretBase32);\n  const hmac = crypto.createHmac('sha1', key).update(buffer).digest();\n  const offset = hmac[hmac.length - 1] & 0xf;\n  const codigo = ((hmac[offset] & 0x7f) << 24) |\n                 ((hmac[offset + 1] & 0xff) << 16) |\n                 ((hmac[offset + 2] & 0xff) << 8) |\n                 (hmac[offset + 3] & 0xff);\n  return (codigo % 1000000).toString().padStart(6, '0');\n}\n\nconst item = $input.item.json;\nconst codigoRecibido = String($('Recibir login').item.json.body.codigo_totp || '');\nconst codigoEsperado = generarTOTP(item.totp_secret);\nconst esValidoTotp = codigoRecibido === codigoEsperado;\n\nreturn {\n  json: {\n    ...item,\n    es_valido_totp: esValidoTotp,\n    codigo_recibido: codigoRecibido\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        -800
+      ],
+      "id": "08ceba6b-7e84-4e2f-a599-2655c4967aa8",
+      "name": "Validar TOTP login"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fa0c99e1-d8ba-452f-b251-36d1a1a956e5",
+              "leftValue": "={{ $json.es_valido_totp }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1296,
+        -800
+      ],
+      "id": "fcb586f1-0ff5-42df-8f97-7ad224341bd4",
+      "name": "TOTP valido"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM codigos_respaldo\nWHERE usuario_id = $1 AND codigo = $2 AND usado = false;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}, {{ $('Recibir login').item.json.body.codigo_totp }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1568,
+        -704
+      ],
+      "id": "4a4143a7-d5bd-44b3-bf46-d3dadcd2fa62",
+      "name": "Buscar codigo respaldo",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "82674703-252b-4524-9547-8478705f1fa4",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1808,
+        -576
+      ],
+      "id": "8a73b459-f76d-4a4d-9497-1857f03761ca",
+      "name": "Respaldo valido"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "codigos_respaldo",
+          "mode": "list",
+          "cachedResultName": "codigos_respaldo"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "usado": true,
+            "id": "={{ $json.id }}",
+            "usado_en": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "codigo",
+              "displayName": "codigo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "usado",
+              "displayName": "usado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usado_en",
+              "displayName": "usado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2016,
+        -768
+      ],
+      "id": "057a2f9c-20f8-4a9b-8e07-8b103f89ebd9",
+      "name": "Marcar respaldo usado",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $('Buscar usuario').item.json;\nconst lockVencido = item.bloqueado_hasta && new Date(item.bloqueado_hasta) <= new Date();\nconst base = lockVencido ? 0 : item.intentos_fallidos;\nconst intentosActuales = base + 1;\nconst debeBloquear = intentosActuales >= 3;\n\nlet bloqueadoHasta = null;\nif (debeBloquear) {\n  bloqueadoHasta = new Date(Date.now() + 15 * 60 * 1000).toISOString();\n}\n\nreturn {\n  json: {\n    ...item,\n    intentos_fallidos_nuevo: intentosActuales,\n    bloqueado_hasta_nuevo: bloqueadoHasta\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        -272
+      ],
+      "id": "6981292a-2b2a-4359-91d1-a52d009063e2",
+      "name": "Calcular bloqueo login"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Credenciales inválidas\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2864,
+        -400
+      ],
+      "id": "403e5385-41c9-43df-a8ac-0988b66a0ec7",
+      "name": "Rechazar - Codigo invalido"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "usuarios",
+          "mode": "list",
+          "cachedResultName": "usuarios"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "=  {{ $json.id }}",
+            "intentos_fallidos": "={{ $json.intentos_fallidos_nuevo }}",
+            "bloqueado_hasta": "={{ $json.bloqueado_hasta_nuevo }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "password_hash",
+              "displayName": "password_hash",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "salt",
+              "displayName": "salt",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "totp_secret",
+              "displayName": "totp_secret",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "intentos_fallidos",
+              "displayName": "intentos_fallidos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bloqueado_hasta",
+              "displayName": "bloqueado_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "doctor_id",
+              "displayName": "doctor_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2512,
+        -336
+      ],
+      "id": "17e04320-1867-4f82-8715-df8d271db5bb",
+      "name": "Registrar intento fallido",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const crypto = require('crypto');\n\nconst item = $('Validar TOTP login').item.json;\nconst token = crypto.randomBytes(32).toString('hex');\nconst expiraEn = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();\n\nreturn {\n  json: {\n    ...item,\n    token: token,\n    expira_en: expiraEn\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        -1008
+      ],
+      "id": "2f09ab0d-bd26-4e96-b88b-e1c0cf658186",
+      "name": "Generar token"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "sesiones",
+          "mode": "list",
+          "cachedResultName": "sesiones"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "token": "={{ $json.token }}",
+            "usuario_id": "={{ $json.id }}",
+            "rol": "={{ $json.rol }}",
+            "expira_en": "={{ $json.expira_en }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "token",
+              "displayName": "token",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "usuario_id",
+              "displayName": "usuario_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expira_en",
+              "displayName": "expira_en",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2432,
+        -1008
+      ],
+      "id": "3728677a-217a-4a29-b918-83f58ad28307",
+      "name": "Guardar sesion",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ mensaje: \"Login exitoso\", token: $('Generar token').item.json.token, rol: $('Generar token').item.json.rol, expira_en: $('Generar token').item.json.expira_en }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2992,
+        -1024
+      ],
+      "id": "31193116-15a1-4180-9567-852326dc24e5",
+      "name": "Login exitoso"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nconst bloqueado = item.bloqueado_hasta && new Date(item.bloqueado_hasta) > new Date();\n\nreturn {\n  json: {\n    ...item,\n    esta_bloqueado: !!bloqueado\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -176
+      ],
+      "id": "93d7504f-8a70-4434-8d50-08835a381231",
+      "name": "Revisar bloqueo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e4e316b5-b546-4e7b-a38f-51c924412e2f",
+              "leftValue": "={{ $json.esta_bloqueado }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        400,
+        -368
+      ],
+      "id": "fde9af97-1d77-44b1-a564-48b8cac2fdf7",
+      "name": "Cuenta bloqueada"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Cuenta bloqueada temporalmente\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        640,
+        -624
+      ],
+      "id": "9a4389f3-fd60-4fab-8e4d-2452af17f6fd",
+      "name": "Rechazar - Cuenta bloqueada"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL\nWHERE id = {{ $json.usuario_id }}\nRETURNING id;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2656,
+        -1008
+      ],
+      "id": "7979f19c-8985-4c23-9142-7bd2a45c2649",
+      "name": "Resetear intentos",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir login": {
+      "main": [
+        [
+          {
+            "node": "Buscar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar usuario": {
+      "main": [
+        [
+          {
+            "node": "Usuario existe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Usuario existe": {
+      "main": [
+        [
+          {
+            "node": "Revisar bloqueo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Usuario no encontrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar password": {
+      "main": [
+        [
+          {
+            "node": "Password correcta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Password correcta": {
+      "main": [
+        [
+          {
+            "node": "Validar TOTP login",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calcular bloqueo login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar TOTP login": {
+      "main": [
+        [
+          {
+            "node": "TOTP valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOTP valido": {
+      "main": [
+        [
+          {
+            "node": "Generar token",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Buscar codigo respaldo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respaldo valido": {
+      "main": [
+        [
+          {
+            "node": "Marcar respaldo usado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calcular bloqueo login",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular bloqueo login": {
+      "main": [
+        [
+          {
+            "node": "Registrar intento fallido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar codigo respaldo": {
+      "main": [
+        [
+          {
+            "node": "Respaldo valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar intento fallido": {
+      "main": [
+        [
+          {
+            "node": "Rechazar - Codigo invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar respaldo usado": {
+      "main": [
+        [
+          {
+            "node": "Generar token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar token": {
+      "main": [
+        [
+          {
+            "node": "Guardar sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar sesion": {
+      "main": [
+        [
+          {
+            "node": "Resetear intentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revisar bloqueo": {
+      "main": [
+        [
+          {
+            "node": "Cuenta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cuenta bloqueada": {
+      "main": [
+        [
+          {
+            "node": "Rechazar - Cuenta bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar password",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resetear intentos": {
+      "main": [
+        [
+          {
+            "node": "Login exitoso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8720a16a-7e73-4879-aa08-13e7d4cf7663",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "cgDkCBRK0jFe2kp8",
+  "tags": []
+}

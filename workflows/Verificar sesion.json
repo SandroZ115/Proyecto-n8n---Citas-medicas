@@ -1,0 +1,171 @@
+{
+  "name": "Verificar sesion",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "verificar-sesion",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d4b0e6a8-eff7-48a0-b4cc-07a7f68de27c",
+      "name": "Recibir verificacion",
+      "webhookId": "c691eb5e-468d-4af9-ad77-cb7cf5c2b0b9"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.id, s.usuario_id, s.rol, s.expira_en\nFROM sesiones s\nWHERE s.token = $1 AND s.expira_en > NOW();",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || '').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "37aa85f7-6902-4c43-a15b-a406eb2cdf13",
+      "name": "Recibir verificacion1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4807b409-fc39-4849-997d-c3030e64d5bc",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "54e1c98b-7094-45cd-8e2e-b50a9b4cbd63",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ valida: true, rol: $json.rol, usuario_id: $json.usuario_id }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        736,
+        -224
+      ],
+      "id": "ae9f6201-8eed-42bb-89e0-5e6802365c53",
+      "name": "Sesion OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Sesión inválida o vencida\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        96
+      ],
+      "id": "1ede7dfd-0232-4455-84a4-e5382f18be15",
+      "name": "Sesion invalida"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir verificacion": {
+      "main": [
+        [
+          {
+            "node": "Recibir verificacion1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recibir verificacion1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Sesion OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sesion invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "045d2afd-63d7-4c1e-983e-9d4789d2457d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "q7YgNsyrjSOnj94x",
+  "tags": []
+}

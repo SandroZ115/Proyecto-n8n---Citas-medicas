@@ -1,0 +1,324 @@
+{
+  "name": "Doctores disponibles",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "doctores-disponibles",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a75f975a-518b-49fe-a4fc-212880d5abaf",
+      "name": "Recibir consulta",
+      "webhookId": "8bbfd111-d8db-4b10-8ee7-8790baf1f5a6"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT usuario_id, rol FROM sesiones WHERE token = $1 AND expira_en > NOW();",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "2e5a027c-5102-47a0-bf47-df2bf689d346",
+      "name": "Buscar sesion",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Sesión inválida\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        704,
+        192
+      ],
+      "id": "cd4f3c5a-360b-47d9-9599-ade9f43285b8",
+      "name": "Rechazar - Sin sesion"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Recibir consulta').first().json.body || {};\nconst especialidadId = Number(body.especialidad_id);\nconst fecha = new Date(body.fecha_hora);\n\nlet motivo = null;\nif (!Number.isInteger(especialidadId) || especialidadId <= 0) {\n  motivo = 'Falta la especialidad';\n} else if (isNaN(fecha.getTime())) {\n  motivo = 'Fecha y hora inválidas';\n} else if (fecha.getUTCMinutes() % 30 !== 0 || fecha.getUTCSeconds() !== 0) {\n  motivo = 'Las citas son en bloques de 30 minutos (:00 o :30)';\n} else if (fecha <= new Date()) {\n  motivo = 'La cita debe ser en el futuro';\n} else {\n  const minutos = fecha.getUTCHours() * 60 + fecha.getUTCMinutes();\n  // 08:00 a 17:00 en Guatemala (UTC-6) = 14:00 a 23:00 UTC; el último bloque empieza 22:30 UTC\n  if (minutos < 14 * 60 || minutos > 22 * 60 + 30) {\n    motivo = 'Horario de atención: 08:00 a 17:00 (hora de Guatemala)';\n  }\n}\n\nreturn [{\n  json: {\n    valido: motivo === null,\n    motivo: motivo,\n    especialidad_id: especialidadId,\n    fecha_sql: isNaN(fecha.getTime()) ? null : fecha.toISOString().slice(0, 19).replace('T', ' ')\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "b70937e9-9ee4-415f-92f9-b4ce3b0954ce",
+      "name": "Validar horario"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9f331bfa-0f1c-46c9-8d48-6f7bc469a35b",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "d5332ce9-69e9-40fe-b8a5-859d9471b542",
+      "name": "Horario valido"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7a607c1d-22dc-4946-ab5e-a981fa3c8cd7",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "e9f643c0-5c63-47f2-a443-19af9a273f07",
+      "name": "Sesion valida"
+    },
+    {
+      "parameters": {
+        "jsCode": "const doctores = $input.all().map(i => i.json).filter(d => d.id);\nreturn [{ json: { doctores } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -192
+      ],
+      "id": "426f3236-a992-4963-ad32-2b4395340585",
+      "name": "Armar respuesta"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id, u.correo, e.nombre AS especialidad\nFROM usuarios u\nJOIN especialidades e ON e.id = u.especialidad_id\nWHERE u.rol = 'doctor'\n  AND u.especialidad_id = $1::int\n  AND e.activo\n  AND NOT EXISTS (\n    SELECT 1 FROM solicitudes_citas c\n    WHERE c.doctor_id = u.id\n      AND c.estado <> 'cancelada'\n      AND tsrange(c.horario_asignado, c.horario_asignado + INTERVAL '30 minutes')\n          && tsrange($2::timestamp, $2::timestamp + INTERVAL '30 minutes')\n  )\nORDER BY u.id;",
+        "options": {
+          "queryReplacement": "={{ $json.especialidad_id }}, {{ $json.fecha_sql }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1120,
+        -192
+      ],
+      "id": "bb6c0e96-8943-4d8c-ba8b-6598ced9968c",
+      "name": "Traer doctores libres",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1568,
+        -192
+      ],
+      "id": "a391e727-eae9-4d47-b58f-b45de6af6816",
+      "name": "Listado OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: $json.motivo }) }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1152,
+        192
+      ],
+      "id": "53bf47a2-37cc-498d-891a-5311932b7803",
+      "name": "Rechazar - Horario"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir consulta": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion": {
+      "main": [
+        [
+          {
+            "node": "Sesion valida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar horario": {
+      "main": [
+        [
+          {
+            "node": "Horario valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sesion valida": {
+      "main": [
+        [
+          {
+            "node": "Validar horario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Horario valido": {
+      "main": [
+        [
+          {
+            "node": "Traer doctores libres",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Horario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Traer doctores libres": {
+      "main": [
+        [
+          {
+            "node": "Armar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar respuesta": {
+      "main": [
+        [
+          {
+            "node": "Listado OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4e6b8160-e2ed-40fe-883c-7dc679380371",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "4VRnLHH2fZZIMAgf",
+  "tags": []
+}

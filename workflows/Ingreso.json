@@ -1,0 +1,322 @@
+{
+  "name": "Ingreso",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "citas",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        -128
+      ],
+      "id": "bc0eb6c4-3d27-4806-8ac7-b7658ab86566",
+      "name": "Recibir solicitud",
+      "webhookId": "e0607614-4901-4746-ae2e-4457fab906a7"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM solicitudes_citas\nWHERE nombre_paciente = $1 AND especialidad = $2\nAND fecha_solicitud >= NOW() - INTERVAL '1 hour';",
+        "options": {
+          "queryReplacement": "={{ $json.body.nombre_paciente }}, {{ $json.body.especialidad }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        16,
+        -448
+      ],
+      "id": "bf8d4d62-3c47-441d-ad46-5cb4cad0256c",
+      "name": "Buscar duplicados",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "549dbe60-3a30-4853-b08c-e4de4339f5e5",
+              "leftValue": "={{ $json.id.toString() }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        -496
+      ],
+      "id": "5501bedf-d72f-4eae-93a7-59790c1067de",
+      "name": "Es duplicado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Ya existe una solicitud reciente para este paciente\"}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        144
+      ],
+      "id": "ab2a989e-c323-4b6b-9ce9-d56abdac8998",
+      "name": "RECHAZAR"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "solicitudes_citas",
+          "mode": "list",
+          "cachedResultName": "solicitudes_citas"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombre_paciente": "={{ $('Recibir solicitud').item.json.body.nombre_paciente }}",
+            "especialidad": "={{ $('Recibir solicitud').item.json.body.especialidad }}",
+            "urgencia": "={{ $('Recibir solicitud').item.json.body.urgencia }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nombre_paciente",
+              "displayName": "nombre_paciente",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "especialidad",
+              "displayName": "especialidad",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgencia",
+              "displayName": "urgencia",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_solicitud",
+              "displayName": "fecha_solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        400,
+        -176
+      ],
+      "id": "1695469e-376c-41ef-8072-fa3b2dfe6d5e",
+      "name": "Guardar solicitud",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d10d41f9-a8dc-4abe-aa9d-422f2d2b1dcb",
+              "leftValue": "={{ $json.headers['x-api-key'] }}",
+              "rightValue": "CAMBIAR_CLAVE_API",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        -192
+      ],
+      "id": "e8ade848-d893-4991-b951-ca951ad2258f",
+      "name": "Validad API KEY"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "    {\"error\": \"Acceso no autorizado\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        112,
+        -32
+      ],
+      "id": "fa60922c-d9c5-44f1-8056-e69d321aca6f",
+      "name": "Rechazar - Sin Autorizacion"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir solicitud": {
+      "main": [
+        [
+          {
+            "node": "Validad API KEY",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar duplicados": {
+      "main": [
+        [
+          {
+            "node": "Es duplicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es duplicado": {
+      "main": [
+        [
+          {
+            "node": "RECHAZAR",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guardar solicitud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validad API KEY": {
+      "main": [
+        [
+          {
+            "node": "Buscar duplicados",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin Autorizacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4eaa3045-bba2-45f8-bd1e-6df9224e06c6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "fvkKdOHyK9zxB0Sq",
+  "tags": []
+}

@@ -1,0 +1,209 @@
+{
+  "name": "Registro TOTP",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "51714513-11e4-4d61-b62f-392a1486c88c",
+      "name": "Iniciar registro"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8464caaa-9aa5-4e3e-8fb6-f28139c7312b",
+              "name": "nombre",
+              "value": "Dr. Prueba",
+              "type": "string"
+            },
+            {
+              "id": "58b5d14c-76db-4770-bb89-045070c0afe6",
+              "name": "rol",
+              "value": "doctor",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "1342b7b9-8df9-43cb-b27c-093b345dcdd8",
+      "name": "Datos del doctor"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function generarSecretoBase32(longitud = 16) {\n  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';\n  let secreto = '';\n  for (let i = 0; i < longitud; i++) {\n    secreto += alfabeto[Math.floor(Math.random() * alfabeto.length)];\n  }\n  return secreto;\n}\n\nconst item = $input.item.json;\nreturn {\n  json: {\n    ...item,\n    totp_secret: generarSecretoBase32()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "e2d13193-e28c-42cb-959f-a65e1ec2ff79",
+      "name": "Generar codigo TOTP"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "doctores",
+          "mode": "list",
+          "cachedResultName": "doctores"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "intentos_fallidos": 0,
+            "nombre": "={{ $json.nombre }}",
+            "rol": "={{ $json.rol }}",
+            "totp_secret": "={{ $json.totp_secret }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "totp_secret",
+              "displayName": "totp_secret",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "intentos_fallidos",
+              "displayName": "intentos_fallidos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bloqueado_hasta",
+              "displayName": "bloqueado_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        672,
+        0
+      ],
+      "id": "ef6867b8-38c5-410a-b781-0b2ef638ebcc",
+      "name": "Guardar doctor",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Iniciar registro": {
+      "main": [
+        [
+          {
+            "node": "Datos del doctor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Datos del doctor": {
+      "main": [
+        [
+          {
+            "node": "Generar codigo TOTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar codigo TOTP": {
+      "main": [
+        [
+          {
+            "node": "Guardar doctor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bc4d3487-2749-4475-a64e-a3f0c2820cf4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "A6QkMG0E06lg15aw",
+  "tags": []
+}

@@ -1,0 +1,733 @@
+{
+  "name": "Admin usuarios",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id, s.rol\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW() AND s.rol = 'admin' AND u.activo;",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "faf39467-2ed8-4d3a-9fba-b5a421613580",
+      "name": "Buscar sesion admin",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0e5a7c0a-fa83-4c56-9854-f9e280af0398",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "7d24c774-61a7-4a93-bfd8-a5090954c7bf",
+      "name": "Es admin"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Requiere rol admin\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        736,
+        288
+      ],
+      "id": "cf6a482a-d30f-4421-bcb8-b78b26f22757",
+      "name": "Rechazar - Sin permiso"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Recibir usuarios').first().json.body || {};\nconst sesion = $('Buscar sesion admin').first().json;\n\nconst accion = String(body.accion || '').trim().toLowerCase();\nconst id = Number(body.usuario_id || 0);\nconst valida = ['listar', 'baja', 'reactivar'].includes(accion)\n  && (accion === 'listar' || (Number.isInteger(id) && id > 0));\n\nreturn [{\n  json: {\n    accion,\n    valida,\n    usuario_id: id,\n    admin_id: Number(sesion.usuario_id)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        -208
+      ],
+      "id": "c2cf432e-b81d-45c1-bd8e-e9d0364fdca0",
+      "name": "Leer accion"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "d9533d26-4456-4f5b-af2b-ccba622f6c1a",
+              "leftValue": "={{ $json.valida }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        -208
+      ],
+      "id": "97262ab5-ff8a-479c-99b7-eb3d79247eb0",
+      "name": "Accion valida"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Acción no válida\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "3d5be363-de03-4782-98b1-ce00d5f36763",
+      "name": "Rechazar - Accion"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b07ea166-7358-46a3-b83c-ca4d09560242",
+              "leftValue": "={{ $json.accion }}",
+              "rightValue": "listar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        -480
+      ],
+      "id": "43cb1adf-de62-40ef-a301-298a88518b7f",
+      "name": "Es listar"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.id, u.correo, u.rol, u.activo,\n       e.nombre AS especialidad,\n       (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > NOW()) AS bloqueado,\n       (SELECT COUNT(*)::int FROM solicitudes_citas c\n         WHERE c.doctor_id = u.id\n           AND c.estado NOT IN ('cancelada', 'completada')\n           AND c.horario_asignado > NOW()) AS citas_abiertas\nFROM usuarios u\nLEFT JOIN especialidades e ON e.id = u.especialidad_id\nORDER BY u.activo DESC, u.rol, u.correo;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1424,
+        -672
+      ],
+      "id": "9a292baf-ddd9-40ff-893d-42662c1491ac",
+      "name": "Listar usuarios",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const usuarios = $input.all().map(i => i.json).filter(u => u.id);\nreturn [{ json: { usuarios } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -688
+      ],
+      "id": "dcd7fe5b-d4ae-4ba1-a16a-b01a98121cf1",
+      "name": "Armar respuesta"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1904,
+        -688
+      ],
+      "id": "a163a5f4-fa47-49cf-a85a-3452deda3cd1",
+      "name": "Listado OK"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "547bb3ff-204a-4a17-bf49-fdd26aff5ef0",
+              "leftValue": "={{ $json.accion }}",
+              "rightValue": "baja",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1392,
+        -240
+      ],
+      "id": "e6f4c475-7416-48b5-8368-188fd0e31aba",
+      "name": "Es baja"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH objetivo AS (\n  SELECT id, rol FROM usuarios WHERE id = $1::int AND activo\n),\nverificacion AS (\n  SELECT o.id,\n    CASE\n      WHEN o.id = $2::int THEN 'propio'\n      WHEN o.rol = 'admin'\n        AND (SELECT COUNT(*) FROM usuarios WHERE rol = 'admin' AND activo) <= 1\n        THEN 'ultimo_admin'\n      WHEN o.rol = 'doctor' AND EXISTS (\n        SELECT 1 FROM solicitudes_citas c\n        WHERE c.doctor_id = o.id\n          AND c.estado NOT IN ('cancelada', 'completada')\n          AND c.horario_asignado > NOW()\n      ) THEN 'citas_abiertas'\n      ELSE 'ok'\n    END AS resultado\n  FROM objetivo o\n),\nbaja AS (\n  UPDATE usuarios SET activo = FALSE\n  WHERE id IN (SELECT id FROM verificacion WHERE resultado = 'ok')\n  RETURNING id\n),\ncierre AS (\n  DELETE FROM sesiones WHERE usuario_id IN (SELECT id FROM baja)\n),\nauditoria AS (\n  INSERT INTO bitacora (accion, detalle)\n  SELECT 'usuario_baja', 'Admin ' || $2::int || ' dio de baja al usuario ' || id FROM baja\n)\nSELECT COALESCE((SELECT resultado FROM verificacion), 'no_encontrado') AS resultado,\n       (SELECT COUNT(*)::int FROM solicitudes_citas c\n         WHERE c.doctor_id = $1::int\n           AND c.estado NOT IN ('cancelada', 'completada')\n           AND c.horario_asignado > NOW()) AS citas_abiertas;",
+        "options": {
+          "queryReplacement": "={{ $('Leer accion').first().json.usuario_id }}, {{ $('Leer accion').first().json.admin_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1680,
+        -400
+      ],
+      "id": "67abc127-dc8c-4183-9c26-6659d6bb73a2",
+      "name": "Dar de baja",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4c365baf-01a7-43a8-8ba8-4029af30b067",
+              "leftValue": "={{ $json.resultado }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1904,
+        -400
+      ],
+      "id": "eb054ae2-fddb-4079-951f-47f6b1630203",
+      "name": "Baja aplicada"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"mensaje\": \"Usuario dado de baja\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2192,
+        -544
+      ],
+      "id": "3250bdd4-9f9f-4a08-90fc-4b5cddaf32fa",
+      "name": "Baja OK"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "79ebc15e-8e10-4b02-a059-f4bd5a02c104",
+              "leftValue": "={{ $json.resultado }}",
+              "rightValue": "no_encontrado",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        -224
+      ],
+      "id": "faf67e04-8ccb-4a71-9f59-233e61f7ae32",
+      "name": "Es inexistente"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"El usuario no existe o ya estaba dado de baja\"}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2400,
+        -368
+      ],
+      "id": "d20dc567-f1ae-461e-9b01-432fb7f7e047",
+      "name": "Rechazar - No encontrado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: ({ propio: 'No puedes dar de baja tu propia cuenta', ultimo_admin: 'No se puede dar de baja al último administrador activo', citas_abiertas: 'El doctor tiene ' + $json.citas_abiertas + ' cita(s) futura(s) abiertas: cancélalas o complétalas primero' })[$json.resultado] || 'No se pudo aplicar' }) }}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2368,
+        -128
+      ],
+      "id": "d30bf2d4-083c-449a-917f-f7e68f43a85c",
+      "name": "Rechazar - Baja"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH reactivado AS (\n  UPDATE usuarios u\n  SET activo = TRUE, intentos_fallidos = 0, bloqueado_hasta = NULL\n  WHERE u.id = $1::int AND NOT u.activo\n    AND (u.rol <> 'doctor' OR EXISTS (\n      SELECT 1 FROM especialidades e WHERE e.id = u.especialidad_id AND e.activo))\n  RETURNING u.id, u.correo\n),\nauditoria AS (\n  INSERT INTO bitacora (accion, detalle)\n  SELECT 'usuario_reactivado', 'Admin ' || $2::int || ' reactivó al usuario ' || id FROM reactivado\n)\nSELECT id, correo FROM reactivado;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1584,
+        -32
+      ],
+      "id": "38e077d9-b3ff-47d2-bece-3979d0df343e",
+      "name": "Reactivar usuario",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e5e10dcb-a93b-45a1-9aef-6d1a113caed8",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1856,
+        160
+      ],
+      "id": "c5d62cef-9052-4540-b47a-c544f0b7ba7c",
+      "name": "Reactivada"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"mensaje\": \"Usuario reactivado\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2080,
+        64
+      ],
+      "id": "26b35977-9548-4803-bf83-4c59b117b135",
+      "name": "Reactivacion OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"No se pudo: el usuario no existe, ya está activo o su especialidad está desactivada\"}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2080,
+        256
+      ],
+      "id": "73dd49c7-e8f2-4687-8eaa-ea18a60029a8",
+      "name": "Rechazar - Reactivacion"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admin-usuarios",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e5ba31de-0b8b-43d5-9419-346d1e9b86cc",
+      "name": "Recibir usuarios",
+      "webhookId": "4af94291-bc0d-4e59-a428-8d780dc50319"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Buscar sesion admin": {
+      "main": [
+        [
+          {
+            "node": "Es admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es admin": {
+      "main": [
+        [
+          {
+            "node": "Leer accion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin permiso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer accion": {
+      "main": [
+        [
+          {
+            "node": "Accion valida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accion valida": {
+      "main": [
+        [
+          {
+            "node": "Es listar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Accion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es listar": {
+      "main": [
+        [
+          {
+            "node": "Listar usuarios",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Es baja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar usuarios": {
+      "main": [
+        [
+          {
+            "node": "Armar respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar respuesta": {
+      "main": [
+        [
+          {
+            "node": "Listado OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es baja": {
+      "main": [
+        [
+          {
+            "node": "Dar de baja",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reactivar usuario",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dar de baja": {
+      "main": [
+        [
+          {
+            "node": "Baja aplicada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Baja aplicada": {
+      "main": [
+        [
+          {
+            "node": "Baja OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Es inexistente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es inexistente": {
+      "main": [
+        [
+          {
+            "node": "Rechazar - No encontrado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Baja",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reactivar usuario": {
+      "main": [
+        [
+          {
+            "node": "Reactivada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reactivada": {
+      "main": [
+        [
+          {
+            "node": "Reactivacion OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Reactivacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recibir usuarios": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b032bf04-2155-426b-8aac-56804f40189d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "5Igus9EbA0tgZ4QA",
+  "tags": []
+}

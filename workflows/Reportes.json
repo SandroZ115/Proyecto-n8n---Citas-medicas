@@ -1,0 +1,264 @@
+{
+  "name": "Reportes",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -704,
+        208
+      ],
+      "id": "3513fff5-b032-43e2-8f0f-9e7658450036",
+      "name": "Disparar generacion de reporte"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fa24b160-b037-4992-b7b6-c511b0dce7b8",
+              "name": "periodo",
+              "value": "mensual",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -480,
+        208
+      ],
+      "id": "290c741b-c329-4805-b56c-ddc33e962f24",
+      "name": "Definir periodo"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.periodo }}",
+                    "rightValue": "=diario",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ab2c06b5-bdaa-4210-97b1-1c9afd62809d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Diario"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "54a6d6f5-98a7-4de8-ab7c-6cfa7dc2ebed",
+                    "leftValue": "={{ $json.periodo }}",
+                    "rightValue": "semanal",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Semanal"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c071e92b-0fa6-4ae6-84a8-f8f8a7ce39aa",
+                    "leftValue": "={{ $json.periodo }}",
+                    "rightValue": "mensual",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Mensual"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        208
+      ],
+      "id": "985e5b19-d948-4a57-aee1-575fe35808c3",
+      "name": "Clasificar periodo"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total, estado FROM solicitudes_citas\nWHERE fecha_solicitud >= CURRENT_DATE\nGROUP BY estado;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        0,
+        0
+      ],
+      "id": "19f1d6fa-21fb-4a05-9e9b-9b73731d15fe",
+      "name": "Reporte diario",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total, estado FROM solicitudes_citas\nWHERE fecha_solicitud >= CURRENT_DATE - INTERVAL '7 days'\nGROUP BY estado;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        64,
+        224
+      ],
+      "id": "d0f1c929-eaf7-4bd8-9875-f77d8beb0bfc",
+      "name": "Reporte semanal",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total, estado FROM solicitudes_citas\nWHERE fecha_solicitud >= CURRENT_DATE - INTERVAL '30 days'\nGROUP BY estado;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        32,
+        480
+      ],
+      "id": "b7b883c1-6cf1-4edf-89e6-a8a8f5515d4b",
+      "name": "Reporte mensual",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Disparar generacion de reporte": {
+      "main": [
+        [
+          {
+            "node": "Definir periodo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Definir periodo": {
+      "main": [
+        [
+          {
+            "node": "Clasificar periodo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar periodo": {
+      "main": [
+        [
+          {
+            "node": "Reporte diario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reporte semanal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reporte mensual",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1a383332-60b7-41e9-8d51-ea58d9ef1594",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "HWeDTERnjCZiG9Qo",
+  "tags": []
+}

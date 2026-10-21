@@ -1,0 +1,274 @@
+{
+  "name": "Admin desbloquear usuario",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admin-desbloquear",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0ef37483-ef89-4fac-ab36-133391e885ae",
+      "name": "Recibir desbloqueo",
+      "webhookId": "a6310622-2b30-4dcc-a81f-aecb9a30b398"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT usuario_id, rol FROM sesiones WHERE token = $1 AND expira_en > NOW();",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || '').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        192,
+        0
+      ],
+      "id": "971e3e88-89a0-45cb-89f6-fa05181badbb",
+      "name": "Buscar sesion",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c9e75b1d-ef6c-45df-98b5-38c710fc9c50",
+              "leftValue": "={{ $json.rol || '' }}",
+              "rightValue": "admin",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b72dc957-f0d4-4c1a-a1ef-d2ef7252c28b",
+      "name": "Es admin"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Requiere rol admin\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        368
+      ],
+      "id": "99da5e36-71a9-4118-82a3-4459d772a97f",
+      "name": "Rechazar - No es admin"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL\nWHERE correo = $1 RETURNING id, correo;",
+        "options": {
+          "queryReplacement": "={{ $('Recibir desbloqueo').item.json.body.correo }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        688,
+        -192
+      ],
+      "id": "4396893a-2d7f-47b1-9ecd-da43d7db27c7",
+      "name": "Desbloquear usuario",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8930da4c-6d6e-4635-ad7f-93a860c36703",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1088,
+        -192
+      ],
+      "id": "7a91c8b5-e19b-43c9-b8d6-ef9406b0076a",
+      "name": "Usuario encontrado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"mensaje\": \"Usuario desbloqueado\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1344,
+        -368
+      ],
+      "id": "bbc090df-ad44-45fd-a884-5e2e6a37a7ab",
+      "name": "Usuario desbloqueado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Usuario no encontrado\"}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1312,
+        112
+      ],
+      "id": "0eb1dd4b-e1ac-4121-895b-41148f47ea86",
+      "name": "Usuario no encontrado"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir desbloqueo": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion": {
+      "main": [
+        [
+          {
+            "node": "Es admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es admin": {
+      "main": [
+        [
+          {
+            "node": "Desbloquear usuario",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - No es admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Desbloquear usuario": {
+      "main": [
+        [
+          {
+            "node": "Usuario encontrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Usuario encontrado": {
+      "main": [
+        [
+          {
+            "node": "Usuario desbloqueado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Usuario no encontrado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e5988716-98af-4917-9a70-b0002326892d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "vACKQ0Q1snxy6s34",
+  "tags": []
+}

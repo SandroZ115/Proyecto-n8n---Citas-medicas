@@ -1,0 +1,513 @@
+{
+  "name": "Admin especialidades",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admin-especialidades",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "c4f1f64a-26ba-4944-b860-4176710a682f",
+      "name": "Recibir especialidad",
+      "webhookId": "959ac7e2-80df-482d-8f5a-95e75d0ad8fc"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT usuario_id, rol FROM sesiones\nWHERE token = $1 AND expira_en > NOW() AND rol = 'admin';",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "f3852367-0dae-4dfd-ba35-0f6dbec3ee72",
+      "name": "Buscar sesion admin",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a53400b4-934e-43b0-82af-5fcb7db15a0f",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "d46cad8f-940c-4c79-b21a-b92d4687f85e",
+      "name": "Es admin"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Requiere rol admin\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        736,
+        336
+      ],
+      "id": "05eccf03-a8fc-42ba-b3fe-8fbddd87b595",
+      "name": "Rechazar - Sin permiso"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO especialidades (nombre, descripcion) VALUES ($1, $2)\nON CONFLICT (nombre) DO NOTHING RETURNING id, nombre;",
+        "options": {
+          "queryReplacement": "={{ $('Recibir especialidad').first().json.body.nombre }}, {{ $('Recibir especialidad').first().json.body.descripcion || 'Sin descripcion' }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1312,
+        -656
+      ],
+      "id": "4aeb8e2a-7e46-4efa-bd92-23efd708bdc4",
+      "name": "Crear especialidad",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b7cd9e6d-2da7-4042-a4d3-8b28cbcd58bd",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1920,
+        -400
+      ],
+      "id": "3c286999-c22c-4908-b588-d0090264b0b8",
+      "name": "Hubo resultado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"No se pudo aplicar: nombre repetido, especialidad inexistente o con doctores asignados\"}",
+        "options": {
+          "responseCode": 409
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2288,
+        -288
+      ],
+      "id": "859ef05f-cb85-4816-a0d3-b92512614381",
+      "name": "Rechazar - No aplicado"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ mensaje: \"Cambio aplicado\", especialidad: $json }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2176,
+        -576
+      ],
+      "id": "3c308dc6-c52c-46a8-b618-a17a572a41c3",
+      "name": "Aplicado OK"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Acción no válida\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1264,
+        176
+      ],
+      "id": "352e03d5-a542-4fb5-9465-bf93a83737a6",
+      "name": "Rechazar - Accion invalida"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Recibir especialidad').first().json.body || {};\n\nreturn [{\n  json: {\n    accion: String(body.accion || '').trim().toLowerCase(),\n    nombre: body.nombre,\n    descripcion: body.descripcion || 'Sin descripcion',\n    id: body.id,\n    activo: body.activo\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        656,
+        -192
+      ],
+      "id": "058bb30e-4228-4604-ab04-0a2e61ff0229",
+      "name": "Leer accion"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "crear",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "02c3c200-01f0-4672-a287-7280dc5f4057"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "crear"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "10177669-610d-4ea0-8e2e-e8f1d74038c9",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "editar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "editar"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "223902c2-71a7-4ef0-bc67-6f4543bff8ad",
+                    "leftValue": "={{ $json.accion }}",
+                    "rightValue": "estado",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "estado"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        -368
+      ],
+      "id": "70f98c7f-a1a3-44d8-a01c-31c112928f62",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE especialidades SET nombre = $2, descripcion = $3\nWHERE id = $1\nAND NOT EXISTS (\n  SELECT 1 FROM especialidades\n  WHERE lower(nombre) = lower($2) AND id <> $1\n)\nRETURNING id, nombre;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}, {{ $json.nombre }}, {{ $json.descripcion }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1312,
+        -432
+      ],
+      "id": "aa1dee4c-b718-4336-b286-b1d9cf6a8ea3",
+      "name": "Execute a SQL query",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE especialidades SET activo = $2::boolean\nWHERE id = $1\nAND ($2::boolean OR NOT EXISTS (\n  SELECT 1 FROM usuarios WHERE rol = 'doctor' AND especialidad_id = $1\n))\nRETURNING id, nombre, activo;",
+        "options": {
+          "queryReplacement": "={{ $json.id }}, {{ $json.activo }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1312,
+        -240
+      ],
+      "id": "35022344-d5f1-451b-898a-d8f24df51361",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir especialidad": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion admin": {
+      "main": [
+        [
+          {
+            "node": "Es admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es admin": {
+      "main": [
+        [
+          {
+            "node": "Leer accion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin permiso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear especialidad": {
+      "main": [
+        [
+          {
+            "node": "Hubo resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hubo resultado": {
+      "main": [
+        [
+          {
+            "node": "Aplicado OK",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - No aplicado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leer accion": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Crear especialidad",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Accion invalida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Hubo resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "Hubo resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5c4272b3-5356-4309-90eb-9d6fa62a7f0a",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "z2CeENSTOgrkBtFY",
+  "tags": []
+}

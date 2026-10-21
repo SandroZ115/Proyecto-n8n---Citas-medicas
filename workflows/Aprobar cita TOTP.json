@@ -1,0 +1,655 @@
+{
+  "name": "Aprobar cita TOTP",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "aprobar-cita",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1392,
+        176
+      ],
+      "id": "c680b97b-d366-48cc-952b-f4ed46297b73",
+      "name": "Recibir aprobacion",
+      "webhookId": "533447e7-df3e-47ad-9df3-c213f5f9ef51"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *, (bloqueado_hasta IS NOT NULL AND bloqueado_hasta > NOW()) AS esta_bloqueado\nFROM usuarios WHERE id = $1;",
+        "options": {
+          "queryReplacement": "={{ $('Buscar usuario sesion').item.json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -480,
+        176
+      ],
+      "id": "892f3af9-d33b-4538-bf9f-f2168399d137",
+      "name": "Buscar doctor",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Cuenta bloqueada temporalmente\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "87698919-4fc4-451e-b5ab-a298638ae050",
+      "name": "Rechazar - Cuenta Bloqueada"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c703af7d-c0a1-4d0b-80b7-17a4a1901190",
+              "leftValue": "={{ $json.esta_bloqueado }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -256,
+        176
+      ],
+      "id": "78e3b6e3-0061-4c7b-83b2-4a179c0bc51c",
+      "name": "Doctor bloqueado"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "function base32Decode(base32) {\n  const alfabeto = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';\n  let bits = '';\n  for (const char of base32.toUpperCase()) {\n    const val = alfabeto.indexOf(char);\n    if (val === -1) continue;\n    bits += val.toString(2).padStart(5, '0');\n  }\n  const bytes = [];\n  for (let i = 0; i + 8 <= bits.length; i += 8) {\n    bytes.push(parseInt(bits.substr(i, 8), 2));\n  }\n  return Buffer.from(bytes);\n}\nfunction generarTOTP(secretBase32) {\n  const crypto = require('crypto');\n  const step = 30;\n  const tiempo = Math.floor(Date.now() / 1000 / step);\n  const buffer = Buffer.alloc(8);\n  buffer.writeBigInt64BE(BigInt(tiempo));\n  const key = base32Decode(secretBase32);\n  const hmac = crypto.createHmac('sha1', key).update(buffer).digest();\n  const offset = hmac[hmac.length - 1] & 0xf;\n  const codigo = ((hmac[offset] & 0x7f) << 24) |\n                 ((hmac[offset + 1] & 0xff) << 16) |\n                 ((hmac[offset + 2] & 0xff) << 8) |\n                 (hmac[offset + 3] & 0xff);\n  return (codigo % 1000000).toString().padStart(6, '0');\n}\nconst item = $input.item.json;\nconst codigoRecibido = String($('Recibir aprobacion').item.json.body.codigo_totp);\nconst codigoEsperado = generarTOTP(item.totp_secret);\nreturn {\n  json: {\n    ...item,\n    codigo_recibido: codigoRecibido,\n    codigo_esperado: codigoEsperado,\n    es_valido: codigoRecibido === codigoEsperado\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        272
+      ],
+      "id": "ac34ef5f-b495-4552-b2cd-f3eefdbcc5db",
+      "name": "Validar codigo TOTP"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "851bbb2e-464a-45b4-91cb-9cf8141a650c",
+              "leftValue": "={{ $json.es_valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        272
+      ],
+      "id": "896a0e32-f9e1-4298-9442-7ace8c874189",
+      "name": "Codigo valido"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ok AS (\n  UPDATE solicitudes_citas SET estado = 'asignada'\n  WHERE id = $1::int AND doctor_id = $2::int AND estado = 'pendiente_aprobacion'\n  RETURNING id\n), reinicio AS (\n  UPDATE usuarios SET intentos_fallidos = 0, bloqueado_hasta = NULL\n  WHERE id = $2::int AND EXISTS (SELECT 1 FROM ok)\n)\nSELECT id FROM ok;",
+        "options": {
+          "queryReplacement": "={{ $('Recibir aprobacion').first().json.body.cita_id }}, {{ $('Buscar usuario sesion').first().json.id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        448,
+        48
+      ],
+      "id": "539d80fb-6a42-4b27-bc1b-9d691efa0fea",
+      "name": "Aprobar cita",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "usuarios",
+          "mode": "list",
+          "cachedResultName": "usuarios"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "intentos_fallidos": "={{ $json.intentos_fallidos_nuevo }}",
+            "bloqueado_hasta": "={{ $json.bloqueado_hasta_nuevo }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "password_hash",
+              "displayName": "password_hash",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "salt",
+              "displayName": "salt",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "rol",
+              "displayName": "rol",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "totp_secret",
+              "displayName": "totp_secret",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "intentos_fallidos",
+              "displayName": "intentos_fallidos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bloqueado_hasta",
+              "displayName": "bloqueado_hasta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "doctor_id",
+              "displayName": "doctor_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        736,
+        384
+      ],
+      "id": "b79d451e-2a00-475f-a4fb-138bdd78b890",
+      "name": "Registrar intento fallido",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"mensaje\": \"Cita aprobada correctamente\"}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1152,
+        -80
+      ],
+      "id": "41554bf3-d85d-4d1c-83a3-8db0cc8deae2",
+      "name": "Confirmar aprobacion"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Código TOTP incorrecto\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        960,
+        384
+      ],
+      "id": "1cb6bd33-5249-467a-b01f-9c46eb79ff5b",
+      "name": "Rechazar - Codigo invalido"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $('Buscar doctor').item.json;\nconst lockVencido = item.bloqueado_hasta && new Date(item.bloqueado_hasta) <= new Date();\nconst base = lockVencido ? 0 : item.intentos_fallidos;\nconst intentosActuales = base + 1;\nconst debeBloquear = intentosActuales >= 3;\n\nlet bloqueadoHasta = null;\nif (debeBloquear) {\n  bloqueadoHasta = new Date(Date.now() + 15 * 60 * 1000).toISOString();\n}\n\nreturn {\n  json: {\n    ...item,\n    intentos_fallidos_nuevo: intentosActuales,\n    bloqueado_hasta_nuevo: bloqueadoHasta\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        368
+      ],
+      "id": "f29ec756-84d2-4b72-aa44-dd6d569c6375",
+      "name": "Calcular Bloqueo"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT u.*\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW() AND u.rol = 'doctor';",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        -1104,
+        176
+      ],
+      "id": "ef374d95-5327-4fd7-af59-7e6049dc70c6",
+      "name": "Buscar usuario sesion",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Sesión inválida o sin permiso\"}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -656,
+        496
+      ],
+      "id": "384ce8e4-d42c-44ee-b0ac-fe39c0fafe69",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "184c9ea0-5e09-4466-b86a-f5280d23c317",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -880,
+        176
+      ],
+      "id": "ff80c368-3611-4106-977c-a7b8ced37d0c",
+      "name": "Sesion de doctor"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4ce485b8-c4ff-447b-bb61-5d511532353d",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        48
+      ],
+      "id": "6fb59076-805a-4ad5-b939-f94c819a7e99",
+      "name": "Cita aprobada"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"La cita no existe, no es tuya o ya no está pendiente\"}",
+        "options": {
+          "responseCode": 404
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        896,
+        144
+      ],
+      "id": "3e7cbd2b-7e6b-41ef-b99f-56881b02bdea",
+      "name": "Rechazar - Cita"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Recibir aprobacion": {
+      "main": [
+        [
+          {
+            "node": "Buscar usuario sesion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar doctor": {
+      "main": [
+        [
+          {
+            "node": "Doctor bloqueado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doctor bloqueado": {
+      "main": [
+        [
+          {
+            "node": "Rechazar - Cuenta Bloqueada",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Validar codigo TOTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar codigo TOTP": {
+      "main": [
+        [
+          {
+            "node": "Codigo valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Codigo valido": {
+      "main": [
+        [
+          {
+            "node": "Aprobar cita",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calcular Bloqueo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aprobar cita": {
+      "main": [
+        [
+          {
+            "node": "Cita aprobada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Registrar intento fallido": {
+      "main": [
+        [
+          {
+            "node": "Rechazar - Codigo invalido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Bloqueo": {
+      "main": [
+        [
+          {
+            "node": "Registrar intento fallido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar usuario sesion": {
+      "main": [
+        [
+          {
+            "node": "Sesion de doctor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sesion de doctor": {
+      "main": [
+        [
+          {
+            "node": "Buscar doctor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cita aprobada": {
+      "main": [
+        [
+          {
+            "node": "Confirmar aprobacion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Cita",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "cff7f679-716d-44e9-bd24-3e7be912fe3c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+  },
+  "nodeGroups": [],
+  "id": "cXb8lCBcP0GBjXfY",
+  "tags": []
+}
