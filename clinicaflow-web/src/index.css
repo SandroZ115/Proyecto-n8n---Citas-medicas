@@ -292,6 +292,29 @@ a:focus-visible {
   color: #FFFFFF;
 }
 
+.titulo-enlace {
+  display: inline-block;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.titulo-enlace:hover {
+  opacity: 0.75;
+}
+
+.titulo-enlace:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.menu-titulo .titulo-enlace:focus-visible {
+  outline-color: #FFFFFF;
+}
+
 .menu-nav {
   display: flex;
   flex-direction: column;
@@ -570,8 +593,8 @@ a:focus-visible {
   .main--inicio::before {
     top: 12px;
     right: 12px;
-    bottom: 12px;
     width: 140px;
+    height: 140px;
   }
 }
 
@@ -886,6 +909,199 @@ a:focus-visible {
 
 /* Inicio */
 
+.inicio-pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.inicio-saludo__titulo {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inicio-saludo__fecha {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  text-transform: capitalize;
+}
+
+.inicio-tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
+}
+
+.inicio-tarjetas .tarjeta-grande {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 180px;
+  padding: 22px 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.inicio-tarjetas .tarjeta-grande:hover {
+  border-color: #B9CFC4;
+  box-shadow: 0 10px 24px rgba(15, 42, 34, 0.08);
+  transform: translateY(-2px);
+}
+
+.tarjeta-grande__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tarjeta-grande__titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tarjeta-grande__numero {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  line-height: 1;
+  color: var(--primary-dark);
+}
+
+.tarjeta-grande__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.inicio-fila {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+.inicio-fila:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.inicio-fila__principal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.inicio-fila__titulo {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.inicio-fila__doctor {
+  color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+}
+
+.inicio-fila__detalle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tarjeta-grande__vacio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--muted);
+}
+
+.tarjeta-grande__vacio svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.tarjeta-grande__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.tarjeta-grande__error-texto {
+  margin: 0;
+  color: var(--danger);
+}
+
+.tarjeta-grande__accion {
+  margin-top: auto;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.tarjeta-grande__capa {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--radius);
+}
+
+.tarjeta-grande__capa:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.esqueleto-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.esqueleto {
+  height: 14px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #E8EBE6 25%, #F5F7F3 50%, #E8EBE6 75%);
+  background-size: 200% 100%;
+  animation: esqueleto-movimiento 1.4s ease-in-out infinite;
+}
+
+.esqueleto:nth-child(odd) {
+  width: 78%;
+}
+
+.esqueleto:nth-child(even) {
+  width: 54%;
+}
+
+@keyframes esqueleto-movimiento {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
 .main--inicio {
   position: relative;
 }
@@ -895,8 +1111,8 @@ a:focus-visible {
   position: absolute;
   top: 16px;
   right: 24px;
-  bottom: 16px;
   width: 200px;
+  height: 200px;
   background-image: url('./images/caduceo.png');
   background-size: contain;
   background-position: center;

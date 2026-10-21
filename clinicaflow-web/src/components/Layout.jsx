@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { APP_NAME } from '../config'
 import { verificarSesion } from '../services/api'
 import { EVENTO_SESION_VENCIDA, cerrarSesionVencida } from '../services/sesion'
@@ -300,7 +300,16 @@ export default function Layout() {
     <div className="layout">
       <aside className={`menu${menuAbierto ? ' menu--abierto' : ''}`}>
         <div className="menu-cabecera">
-          <span className="menu-titulo">{APP_NAME}</span>
+          <span className="menu-titulo">
+            <Link
+              to="/dashboard"
+              className="titulo-enlace"
+              aria-label="Ir al inicio"
+              onClick={() => setMenuAbierto(false)}
+            >
+              {APP_NAME}
+            </Link>
+          </span>
         </div>
 
         <nav className="menu-nav">
@@ -347,7 +356,15 @@ export default function Layout() {
               <IconoMenu />
             </button>
 
-            <h1 className="barra-titulo">{titulo}</h1>
+            <h1 className="barra-titulo">
+              {titulo === APP_NAME ? (
+                <Link to="/dashboard" className="titulo-enlace" aria-label="Ir al inicio">
+                  {APP_NAME}
+                </Link>
+              ) : (
+                titulo
+              )}
+            </h1>
           </div>
 
           <div className="barra-derecha">
