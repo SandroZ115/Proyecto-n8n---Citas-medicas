@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-09T19:27:59.771Z",
+  "createdAt": "2026-09-13T23:22:09.443Z",
+  "id": "fvkKdOHyK9zxB0Sq",
   "name": "Ingreso",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -245,7 +251,6 @@
       "name": "Rechazar - Sin Autorizacion"
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir solicitud": {
       "main": [
@@ -306,17 +311,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "4eaa3045-bba2-45f8-bd1e-6df9224e06c6",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "fvkKdOHyK9zxB0Sq",
-  "tags": []
+  "pinData": {},
+  "versionId": "4eaa3045-bba2-45f8-bd1e-6df9224e06c6",
+  "activeVersionId": "4eaa3045-bba2-45f8-bd1e-6df9224e06c6",
+  "versionCounter": 20,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-13T23:22:09.443Z",
+      "createdAt": "2026-09-13T23:22:09.443Z",
+      "role": "workflow:owner",
+      "workflowId": "fvkKdOHyK9zxB0Sq",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "ingreso_V1",
+    "description": "Corrección ante inyección SQL"
+  }
 }

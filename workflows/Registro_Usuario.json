@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-20T18:37:56.368Z",
+  "createdAt": "2026-10-05T06:34:55.359Z",
+  "id": "yj64Hxhz5KTKmm58",
   "name": "Registro_Usuario",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -400,9 +406,9 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT ($1 IN ('doctor','secretaria','admin')\n  AND ($1 <> 'doctor' OR EXISTS (\n    SELECT 1 FROM especialidades WHERE id = $2::int AND activo))) AS valido;",
+        "query": "SELECT ($1 IN ('doctor','secretaria','admin')\n  AND ($1 <> 'doctor' OR EXISTS (\n    SELECT 1 FROM especialidades WHERE id = $2::int AND activo))\n  AND NOT EXISTS (SELECT 1 FROM usuarios WHERE correo = $3)) AS valido;",
         "options": {
-          "queryReplacement": "={{ $('Webhook').first().json.body.rol || 'sin-rol' }}, {{ $('Webhook').first().json.body.especialidad_id || 0 }}"
+          "queryReplacement": "={{ $('Webhook').first().json.body.rol || 'sin-rol' }}, {{ $('Webhook').first().json.body.especialidad_id || 0 }}, {{ $('Webhook').first().json.body.correo || 'sin-correo' }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
@@ -457,7 +463,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "{\"error\": \"Rol inválido o falta una especialidad activa para el doctor\"}",
+        "responseBody": "{\"error\": \"Rol inválido, falta una especialidad activa para el doctor, o el correo ya está registrado\"}",
         "options": {
           "responseCode": 400
         }
@@ -472,7 +478,6 @@
       "name": "Datos validos"
     }
   ],
-  "pinData": {},
   "connections": {
     "Webhook": {
       "main": [
@@ -588,17 +593,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "b6c951e8-681f-4102-b772-5b0d85feb337",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "yj64Hxhz5KTKmm58",
-  "tags": []
+  "pinData": {},
+  "versionId": "6037727c-53a3-4f59-989a-0baa7262e82e",
+  "activeVersionId": "6037727c-53a3-4f59-989a-0baa7262e82e",
+  "versionCounter": 125,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-05T06:34:55.359Z",
+      "createdAt": "2026-10-05T06:34:55.359Z",
+      "role": "workflow:owner",
+      "workflowId": "yj64Hxhz5KTKmm58",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 6037727c",
+    "description": ""
+  }
 }

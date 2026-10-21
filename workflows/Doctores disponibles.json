@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-20T18:35:42.275Z",
+  "createdAt": "2026-10-14T01:19:20.956Z",
+  "id": "4VRnLHH2fZZIMAgf",
   "name": "Doctores disponibles",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -158,7 +164,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT u.id, u.correo, e.nombre AS especialidad\nFROM usuarios u\nJOIN especialidades e ON e.id = u.especialidad_id\nWHERE u.rol = 'doctor'\n  AND u.especialidad_id = $1::int\n  AND e.activo\n  AND NOT EXISTS (\n    SELECT 1 FROM solicitudes_citas c\n    WHERE c.doctor_id = u.id\n      AND c.estado <> 'cancelada'\n      AND tsrange(c.horario_asignado, c.horario_asignado + INTERVAL '30 minutes')\n          && tsrange($2::timestamp, $2::timestamp + INTERVAL '30 minutes')\n  )\nORDER BY u.id;",
+        "query": "SELECT u.id, u.correo, e.nombre AS especialidad\nFROM usuarios u\nJOIN especialidades e ON e.id = u.especialidad_id\nWHERE u.rol = 'doctor' AND u.activo\n  AND u.especialidad_id = $1::int\n  AND e.activo\n  AND NOT EXISTS (\n    SELECT 1 FROM solicitudes_citas c\n    WHERE c.doctor_id = u.id\n      AND c.estado <> 'cancelada'\n      AND tsrange(c.horario_asignado, c.horario_asignado + INTERVAL '30 minutes')\n          && tsrange($2::timestamp, $2::timestamp + INTERVAL '30 minutes')\n  )\nORDER BY u.id;",
         "options": {
           "queryReplacement": "={{ $json.especialidad_id }}, {{ $json.fecha_sql }}"
         }
@@ -214,7 +220,6 @@
       "name": "Rechazar - Horario"
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir consulta": {
       "main": [
@@ -308,17 +313,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "4e6b8160-e2ed-40fe-883c-7dc679380371",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "4VRnLHH2fZZIMAgf",
-  "tags": []
+  "pinData": {},
+  "versionId": "258c9559-fd59-4883-84b2-32c41d2194cb",
+  "activeVersionId": "258c9559-fd59-4883-84b2-32c41d2194cb",
+  "versionCounter": 65,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-14T01:19:20.956Z",
+      "createdAt": "2026-10-14T01:19:20.956Z",
+      "role": "workflow:owner",
+      "workflowId": "4VRnLHH2fZZIMAgf",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 258c9559",
+    "description": ""
+  }
 }

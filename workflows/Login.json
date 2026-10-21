@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-21T02:15:16.832Z",
+  "createdAt": "2026-10-06T07:23:07.168Z",
+  "id": "cgDkCBRK0jFe2kp8",
   "name": "Login",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -21,7 +27,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM usuarios WHERE correo = $1;",
+        "query": "SELECT * FROM usuarios WHERE correo = $1 AND activo;",
         "options": {
           "queryReplacement": "={{ $json.body.correo }}"
         }
@@ -149,8 +155,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1072,
-        -800
+        1040,
+        -720
       ],
       "id": "08ceba6b-7e84-4e2f-a599-2655c4967aa8",
       "name": "Validar TOTP login"
@@ -183,8 +189,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1296,
-        -800
+        1264,
+        -720
       ],
       "id": "fcb586f1-0ff5-42df-8f97-7ad224341bd4",
       "name": "TOTP valido"
@@ -200,8 +206,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        1568,
-        -704
+        1536,
+        -624
       ],
       "id": "4a4143a7-d5bd-44b3-bf46-d3dadcd2fa62",
       "name": "Buscar codigo respaldo",
@@ -242,8 +248,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1808,
-        -576
+        1776,
+        -496
       ],
       "id": "8a73b459-f76d-4a4d-9497-1857f03761ca",
       "name": "Respaldo valido"
@@ -340,8 +346,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2016,
-        -768
+        1984,
+        -688
       ],
       "id": "057a2f9c-20f8-4a9b-8e07-8b103f89ebd9",
       "name": "Marcar respaldo usado",
@@ -360,8 +366,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2240,
-        -272
+        2208,
+        -192
       ],
       "id": "6981292a-2b2a-4359-91d1-a52d009063e2",
       "name": "Calcular bloqueo login"
@@ -377,8 +383,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2864,
-        -400
+        2832,
+        -320
       ],
       "id": "403e5385-41c9-43df-a8ac-0988b66a0ec7",
       "name": "Rechazar - Codigo invalido"
@@ -515,8 +521,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2512,
-        -336
+        2480,
+        -256
       ],
       "id": "17e04320-1867-4f82-8715-df8d271db5bb",
       "name": "Registrar intento fallido",
@@ -535,8 +541,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2208,
-        -1008
+        2176,
+        -928
       ],
       "id": "2f09ab0d-bd26-4e96-b88b-e1c0cf658186",
       "name": "Generar token"
@@ -631,8 +637,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2432,
-        -1008
+        2400,
+        -928
       ],
       "id": "3728677a-217a-4a29-b918-83f58ad28307",
       "name": "Guardar sesion",
@@ -654,8 +660,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2992,
-        -1024
+        2960,
+        -944
       ],
       "id": "31193116-15a1-4180-9567-852326dc24e5",
       "name": "Login exitoso"
@@ -734,8 +740,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2656,
-        -1008
+        2624,
+        -928
       ],
       "id": "7979f19c-8985-4c23-9142-7bd2a45c2649",
       "name": "Resetear intentos",
@@ -747,7 +753,6 @@
       }
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir login": {
       "main": [
@@ -972,17 +977,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "8720a16a-7e73-4879-aa08-13e7d4cf7663",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "cgDkCBRK0jFe2kp8",
-  "tags": []
+  "pinData": {},
+  "versionId": "2e67a83f-a6e2-46cc-8710-0aaad3864730",
+  "activeVersionId": "2e67a83f-a6e2-46cc-8710-0aaad3864730",
+  "versionCounter": 184,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-06T07:23:07.168Z",
+      "createdAt": "2026-10-06T07:23:07.168Z",
+      "role": "workflow:owner",
+      "workflowId": "cgDkCBRK0jFe2kp8",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 2e67a83f",
+    "description": ""
+  }
 }

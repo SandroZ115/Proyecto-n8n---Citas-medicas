@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-21T03:51:18.454Z",
+  "createdAt": "2026-09-13T23:23:59.581Z",
+  "id": "IpbwBRAtkRCL6jtz",
   "name": "Recordatorio",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -14,26 +20,26 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        0,
-        0
+        -192,
+        16
       ],
       "id": "2f9b5d2b-81b1-46e8-9194-09ae1e94094b",
-      "name": "Revisar citas del siguiente dia"
+      "name": "Revisar Citas de Manana"
     },
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM solicitudes_citas\nWHERE estado = 'notificada'\nAND horario_asignado BETWEEN NOW() AND NOW() + INTERVAL '24 hours';",
+        "query": "UPDATE solicitudes_citas c\nSET estado = 'recordada'\nWHERE c.id IN (\n  SELECT id FROM solicitudes_citas\n  WHERE estado = 'notificada'\n    AND horario_asignado BETWEEN NOW() AND NOW() + INTERVAL '24 hours'\n  ORDER BY horario_asignado\n  LIMIT 10\n  FOR UPDATE SKIP LOCKED\n)\nRETURNING c.id, c.nombre_paciente, c.correo_paciente, c.especialidad, c.horario_asignado;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        224,
-        0
+        32,
+        16
       ],
       "id": "a6adb667-8951-4532-8e40-7be5956f166a",
-      "name": "Traer citas del siguiente dia",
+      "name": "Reclamar citas",
       "credentials": {
         "postgres": {
           "id": "ICEUfrnRBAkaWxXN",
@@ -44,16 +50,181 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const item = $input.item.json;\nconst mensaje = `Recordatorio: ${item.nombre_paciente}, su cita de ${item.especialidad} es mañana.`;\n\nreturn {\n  json: {\n    ...item,\n    mensaje_recordatorio: mensaje\n  }\n};"
+        "jsCode": "const c = $input.item.json;\nconst correo = String(c.correo_paciente || '').trim();\nconst fecha = new Date(c.horario_asignado).toLocaleString('es-GT', {\n  timeZone: 'America/Guatemala',\n  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n  hour: '2-digit', minute: '2-digit'\n});\n\nreturn {\n  json: {\n    id: c.id,\n    correo_paciente: correo,\n    tiene_correo: correo.length > 0,\n    asunto: 'Recordatorio de su cita en MediNova',\n    texto: `Estimado/a ${c.nombre_paciente}:\\n\\nLe recordamos su cita de ${c.especialidad} programada para el ${fecha} (hora de Guatemala).\\n\\nSi no puede asistir, comuníquese con la clínica con anticipación.\\n\\nMediNova`\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        448,
+        672,
         0
       ],
       "id": "7c908470-994c-4a87-a8ff-49d5c93ed674",
-      "name": "Generar SMS de recordatorio"
+      "name": "Armar recordatorio"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "56156146-0551-4cf0-bb9d-acad2d68c804",
+              "leftValue": "={{ $json.tiene_correo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        0
+      ],
+      "id": "7fad22d3-3362-4645-ae79-0efc4149a0ce",
+      "name": "Tiene correo"
+    },
+    {
+      "parameters": {
+        "fromEmail": "MediNova <TU_CORREO@gmail.com>",
+        "toEmail": "={{ $json.correo_paciente }}",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.texto }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1104,
+        -256
+      ],
+      "id": "07f6930e-58e0-4c46-adab-1464abbce607",
+      "name": "Enviar recordatorio",
+      "webhookId": "8ca470b9-d1de-42d7-9446-54bc8e25f98c",
+      "credentials": {
+        "smtp": {
+          "id": "v6Dh8D2bwTCR6Vty",
+          "name": "SMTP account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "802e3dd0-8e24-4006-8912-b1fa0851c7fe",
+              "name": "cita_id",
+              "value": "={{ $('Armar recordatorio').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b211862e-c6f0-4d68-b137-a050dbf0333c",
+              "name": "accion_envio",
+              "value": "recordatorio_enviado",
+              "type": "string"
+            },
+            {
+              "id": "01ff86f2-084a-4c6b-becf-a11d15bb361f",
+              "name": "detalle_envio",
+              "value": "Correo de recordatorio enviado al paciente",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1328,
+        -352
+      ],
+      "id": "a85c9746-8e37-4128-9c6d-68b57c8c755b",
+      "name": "Estado enviado"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "64375103-9cad-490c-9597-76ec46dd99dd",
+              "name": "=cita_id",
+              "value": "={{ $('Armar recordatorio').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c2e681da-59e5-430b-bf39-8fed46fb0600",
+              "name": "accion_envio",
+              "value": "recordatorio_sin_correo",
+              "type": "string"
+            },
+            {
+              "id": "6a99e43b-1af0-43ac-bec4-1c030d1e5943",
+              "name": "detalle_envio",
+              "value": "La cita no tiene correo del paciente",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1488,
+        112
+      ],
+      "id": "393a0dc9-8838-41d2-8e50-14b1eef7f6e3",
+      "name": " Estado sin correo"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aa198b68-4d65-4df8-8b43-2b01697f1203",
+              "name": "cita_id",
+              "value": "={{ $('Armar recordatorio').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c48ee410-e919-4145-9550-1c6a6005c386",
+              "name": "accion_envio",
+              "value": "recordatorio_fallido",
+              "type": "string"
+            },
+            {
+              "id": "c10ca5e7-d894-4389-97c1-acc194337812",
+              "name": "detalle_envio",
+              "value": "Error al enviar el correo de recordatorio",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        -144
+      ],
+      "id": "db40384f-d85c-4766-bdf1-994ec771443f",
+      "name": "Estado fallido"
     },
     {
       "parameters": {
@@ -71,9 +242,9 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cita_id": "={{ $json.id }}",
-            "accion": "recordatorio_enviado",
-            "detalle": "={{ $json.mensaje_recordatorio }}"
+            "accion": "={{ $json.accion_envio }}",
+            "cita_id": "={{ $json.cita_id }}",
+            "detalle": "={{ $json.detalle_envio }}"
           },
           "matchingColumns": [
             "id"
@@ -114,8 +285,7 @@
               "defaultMatch": false,
               "display": true,
               "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
+              "canBeUsedToMatch": true
             },
             {
               "id": "fecha",
@@ -135,11 +305,11 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        672,
-        0
+        1792,
+        -304
       ],
-      "id": "7765d891-4e64-48f7-8812-16ff7048b483",
-      "name": "Registrar recordatorio",
+      "id": "43e5a02f-da1f-46df-80f4-b7a750c34501",
+      "name": "Registrar Recordatorio",
       "credentials": {
         "postgres": {
           "id": "ICEUfrnRBAkaWxXN",
@@ -149,68 +319,148 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "UPDATE solicitudes_citas SET estado = 'recordada' WHERE id = $1 RETURNING id;",
-        "options": {
-          "queryReplacement": "={{ $json.cita_id }}"
-        }
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "63013208-804e-4054-a2a4-7453752069f9",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
       },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.7,
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
       "position": [
-        896,
-        0
+        288,
+        16
       ],
-      "id": "ec1977b3-7edf-4b1b-b656-47c0a094b013",
-      "name": "Execute a SQL query",
-      "credentials": {
-        "postgres": {
-          "id": "ICEUfrnRBAkaWxXN",
-          "name": "Postgres account"
-        }
-      }
+      "id": "83777df9-51e0-4f2d-bd0a-f3f5c3d6faaa",
+      "name": "Hay cita"
     }
   ],
-  "pinData": {},
   "connections": {
-    "Revisar citas del siguiente dia": {
+    "Revisar Citas de Manana": {
       "main": [
         [
           {
-            "node": "Traer citas del siguiente dia",
+            "node": "Reclamar citas",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Traer citas del siguiente dia": {
+    "Reclamar citas": {
       "main": [
         [
           {
-            "node": "Generar SMS de recordatorio",
+            "node": "Hay cita",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Generar SMS de recordatorio": {
+    "Armar recordatorio": {
       "main": [
         [
           {
-            "node": "Registrar recordatorio",
+            "node": "Tiene correo",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Registrar recordatorio": {
+    "Tiene correo": {
       "main": [
         [
           {
-            "node": "Execute a SQL query",
+            "node": "Enviar recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": " Estado sin correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar recordatorio": {
+      "main": [
+        [
+          {
+            "node": "Estado enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado fallido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado enviado": {
+      "main": [
+        [
+          {
+            "node": "Registrar Recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado fallido": {
+      "main": [
+        [
+          {
+            "node": "Registrar Recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    " Estado sin correo": {
+      "main": [
+        [
+          {
+            "node": "Registrar Recordatorio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay cita": {
+      "main": [
+        [
+          {
+            "node": "Armar recordatorio",
             "type": "main",
             "index": 0
           }
@@ -218,17 +468,61 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "7a46581f-65dd-419a-9744-4d3572dccfa1",
+  "staticData": {
+    "node:Revisar citas del siguiente dia": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    },
+    "node:Revisar Citas de Manana": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    }
+  },
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "IpbwBRAtkRCL6jtz",
-  "tags": []
+  "pinData": {},
+  "versionId": "1e379672-8fc9-4fab-ac03-cb9c97ebbcb0",
+  "activeVersionId": "1e379672-8fc9-4fab-ac03-cb9c97ebbcb0",
+  "versionCounter": 86,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-13T23:23:59.581Z",
+      "createdAt": "2026-09-13T23:23:59.581Z",
+      "role": "workflow:owner",
+      "workflowId": "IpbwBRAtkRCL6jtz",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 1e379672",
+    "description": ""
+  }
 }

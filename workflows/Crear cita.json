@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-20T18:34:47.977Z",
+  "createdAt": "2026-10-14T06:16:45.185Z",
+  "id": "dYuPX4eYDWzaZdVl",
   "name": "Crear cita",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -21,7 +27,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT s.usuario_id, s.rol, u.totp_secret, u.especialidad_id,\n       u.intentos_fallidos, u.bloqueado_hasta,\n       (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > NOW()) AS esta_bloqueado\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW() AND s.rol IN ('secretaria','admin','doctor');",
+        "query": "SELECT s.usuario_id, s.rol, u.totp_secret, u.especialidad_id,\n       u.intentos_fallidos, u.bloqueado_hasta,\n       (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > NOW()) AS esta_bloqueado\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW()\n  AND s.rol IN ('secretaria','admin','doctor') AND u.activo;",
         "options": {
           "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
         }
@@ -264,7 +270,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH elegido AS (\n  SELECT u.id FROM usuarios u\n  JOIN especialidades e ON e.id = u.especialidad_id\n  WHERE u.rol = 'doctor' AND e.activo AND u.especialidad_id = $3::int\n    AND ($5::int = 0 OR u.id = $5::int)\n    AND NOT EXISTS (\n      SELECT 1 FROM solicitudes_citas c\n      WHERE c.doctor_id = u.id AND c.estado <> 'cancelada'\n        AND tsrange(c.horario_asignado, c.horario_asignado + INTERVAL '30 minutes')\n            && tsrange($4::timestamp, $4::timestamp + INTERVAL '30 minutes')\n    )\n  ORDER BY u.id LIMIT 1\n)\nINSERT INTO solicitudes_citas\n  (nombre_paciente, especialidad, especialidad_id, urgencia, estado, doctor_id, horario_asignado, creada_por, correo_paciente)\nSELECT $1, (SELECT nombre FROM especialidades WHERE id = $3::int), $3::int, $2,\n       $7, elegido.id, $4::timestamp, $6::int,\n       CASE WHEN $8::text = 'sin-correo' THEN NULL ELSE $8::text END\nFROM elegido\nRETURNING id, doctor_id, horario_asignado, estado;",
+        "query": "WITH elegido AS (\n  SELECT u.id FROM usuarios u\n  JOIN especialidades e ON e.id = u.especialidad_id\nWHERE u.rol = 'doctor' AND u.activo AND e.activo AND u.especialidad_id = $3::int\n    AND ($5::int = 0 OR u.id = $5::int)\n    AND NOT EXISTS (\n      SELECT 1 FROM solicitudes_citas c\n      WHERE c.doctor_id = u.id AND c.estado <> 'cancelada'\n        AND tsrange(c.horario_asignado, c.horario_asignado + INTERVAL '30 minutes')\n            && tsrange($4::timestamp, $4::timestamp + INTERVAL '30 minutes')\n    )\n  ORDER BY u.id LIMIT 1\n)\nINSERT INTO solicitudes_citas\n  (nombre_paciente, especialidad, especialidad_id, urgencia, estado, doctor_id, horario_asignado, creada_por, correo_paciente)\nSELECT $1, (SELECT nombre FROM especialidades WHERE id = $3::int), $3::int, $2,\n       $7, elegido.id, $4::timestamp, $6::int,\n       CASE WHEN $8::text = 'sin-correo' THEN NULL ELSE $8::text END\nFROM elegido\nRETURNING id, doctor_id, horario_asignado, estado;",
         "options": {
           "queryReplacement": "={{ $('Validar cita').first().json.nombre_paciente }}, {{ $('Validar cita').first().json.urgencia }}, {{ $('Validar cita').first().json.especialidad_id }}, {{ $('Validar cita').first().json.fecha_sql }}, {{ $('Validar cita').first().json.doctor_id }}, {{ $('Validar cita').first().json.creada_por }}, {{ $('Validar cita').first().json.estado_cita }}, {{ $('Validar cita').first().json.correo_paciente }}"
         }
@@ -483,7 +489,6 @@
       }
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir cita": {
       "main": [
@@ -671,17 +676,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "74d12f05-5ec0-4d20-8c6b-721d7d20c588",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "dYuPX4eYDWzaZdVl",
-  "tags": []
+  "pinData": {},
+  "versionId": "a41ae8c5-b072-4b82-a559-c6a2d0bca397",
+  "activeVersionId": "a41ae8c5-b072-4b82-a559-c6a2d0bca397",
+  "versionCounter": 159,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-14T06:16:45.185Z",
+      "createdAt": "2026-10-14T06:16:45.185Z",
+      "role": "workflow:owner",
+      "workflowId": "dYuPX4eYDWzaZdVl",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version a41ae8c5",
+    "description": ""
+  }
 }

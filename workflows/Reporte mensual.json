@@ -1,0 +1,330 @@
+{
+  "updatedAt": "2026-10-21T17:18:36.917Z",
+  "createdAt": "2026-10-21T17:09:41.057Z",
+  "id": "hkzVWly5ugP6A9Yk",
+  "name": "Reporte mensual",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "reporte-mensual",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "171890e4-3581-4a01-a56c-8291ba750636",
+      "name": "Recibir reporte",
+      "webhookId": "814aeca1-3664-49eb-8c3f-06f3176fb3c4"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.usuario_id, s.rol\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW() AND s.rol = 'admin' AND u.activo;",
+        "options": {
+          "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "d5a0f86d-e98a-4c55-b2f6-e76ca6fc7da0",
+      "name": "Buscar sesion admin",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3c74e8d0-0dff-408b-973e-8d5ee8266429",
+              "leftValue": "={{ $json.usuario_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "304e62cf-7f6f-45c6-bab6-23b3406f486d",
+      "name": "Es admin"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Requiere rol admin\"}",
+        "options": {
+          "responseCode": 403
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        656,
+        224
+      ],
+      "id": "0cd614a5-df1b-4604-9313-797acff4bc10",
+      "name": "Rechazar - Sin permiso"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = ($('Recibir reporte').first().json.body) || {};\nconst mes = String(body.mes || '').trim();\nconst tipo = String(body.tipo || 'general').trim().toLowerCase();\nconst usuarioId = Number(body.usuario_id || 0);\n\nconst valido = /^\\d{4}-(0[1-9]|1[0-2])$/.test(mes) && mes >= '2020-01' && mes <= '2100-12'\n  && ['general', 'doctores', 'secretarias'].includes(tipo)\n  && Number.isInteger(usuarioId) && usuarioId >= 0;\n\nreturn [{ json: { valido, mes, tipo, usuario_id: usuarioId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        -96
+      ],
+      "id": "83d80c40-3b2c-462a-841b-5d67c54eeade",
+      "name": "Validar mes"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Indica el mes (AAAA-MM), el tipo (general, doctores o secretarias) y, si filtras, un usuario válido\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1152,
+        80
+      ],
+      "id": "8c7d8ad1-9cf8-4187-9a7b-0aa071e6c530",
+      "name": "Rechazar - Mes"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9470368d-09e7-4d3f-9c35-e6ba6fd59106",
+              "leftValue": "={{ $json.valido }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "c318bd27-ed2a-4a8f-9dd5-a4581045bb3c",
+      "name": "Mes valido"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH r AS (\n  SELECT ($1::text || '-01')::timestamp + INTERVAL '6 hours' AS desde,\n         ($1::text || '-01')::timestamp + INTERVAL '6 hours' + INTERVAL '1 month' AS hasta\n),\ncitas AS (\n  SELECT c.id, COALESCE(c.estado, 'sin_estado') AS estado,\n         COALESCE(e.nombre, c.especialidad, 'Sin especialidad') AS esp,\n         d.correo AS doctor,\n         COALESCE(cr.correo, 'Formulario público') AS creador,\n         COALESCE(cr.rol, 'publico') AS rol_creador\n  FROM solicitudes_citas c\n  CROSS JOIN r\n  LEFT JOIN especialidades e ON e.id = c.especialidad_id\n  LEFT JOIN usuarios d ON d.id = c.doctor_id\n  LEFT JOIN usuarios cr ON cr.id = c.creada_por\n  WHERE c.horario_asignado >= r.desde AND c.horario_asignado < r.hasta\n    AND (\n      $3::text = 'general'\n      OR ($3::text = 'doctores' AND c.doctor_id IS NOT NULL\n          AND ($4::int = 0 OR c.doctor_id = $4::int))\n      OR ($3::text = 'secretarias' AND cr.rol = 'secretaria'\n          AND ($4::int = 0 OR c.creada_por = $4::int))\n    )\n),\nbit AS (\n  SELECT b.fecha, COALESCE(b.accion, 'sin_accion') AS accion, b.cita_id, b.detalle\n  FROM bitacora b CROSS JOIN r\n  WHERE b.fecha >= r.desde AND b.fecha < r.hasta\n    AND ($3::text = 'general' OR b.cita_id IN (SELECT id FROM citas))\n),\nauditoria AS (\n  INSERT INTO bitacora (accion, detalle)\n  VALUES ('reporte_generado',\n          'Admin ' || $2::text || ' generó el reporte ' || $3::text || ' de ' || $1::text)\n  RETURNING 1\n)\nSELECT jsonb_build_object(\n  'mes', $1::text,\n  'tipo', $3::text,\n  'generado_en', now(),\n  'parcial', now() < (SELECT hasta FROM r),\n  'solicitudes_recibidas', CASE WHEN $3::text = 'general'\n      THEN (SELECT COUNT(*) FROM solicitudes_citas s, r\n            WHERE s.fecha_solicitud >= r.desde AND s.fecha_solicitud < r.hasta)\n      ELSE NULL END,\n  'total_citas', (SELECT COUNT(*) FROM citas),\n  'por_estado', COALESCE((SELECT jsonb_object_agg(estado, n)\n      FROM (SELECT estado, COUNT(*) AS n FROM citas GROUP BY estado) t), '{}'::jsonb),\n  'por_especialidad', COALESCE((SELECT jsonb_object_agg(esp, n)\n      FROM (SELECT esp, COUNT(*) AS n FROM citas GROUP BY esp) t), '{}'::jsonb),\n  'por_doctor', COALESCE((SELECT jsonb_agg(jsonb_build_object(\n        'doctor', doctor, 'total', total,\n        'completadas', completadas, 'canceladas', canceladas)\n        ORDER BY total DESC, doctor)\n      FROM (SELECT doctor, COUNT(*) AS total,\n                   COUNT(*) FILTER (WHERE estado = 'completada') AS completadas,\n                   COUNT(*) FILTER (WHERE estado = 'cancelada') AS canceladas\n            FROM citas WHERE doctor IS NOT NULL GROUP BY doctor) t), '[]'::jsonb),\n  'por_creador', COALESCE((SELECT jsonb_agg(jsonb_build_object(\n        'creador', creador, 'rol', rol_creador, 'total', total, 'canceladas', canceladas)\n        ORDER BY total DESC, creador)\n      FROM (SELECT creador, rol_creador, COUNT(*) AS total,\n                   COUNT(*) FILTER (WHERE estado = 'cancelada') AS canceladas\n            FROM citas GROUP BY creador, rol_creador) t), '[]'::jsonb),\n  'eventos', COALESCE((SELECT jsonb_object_agg(accion, n)\n      FROM (SELECT accion, COUNT(*) AS n FROM bit GROUP BY accion) t), '{}'::jsonb),\n  'bitacora_total', (SELECT COUNT(*) FROM bit),\n  'bitacora', COALESCE((SELECT jsonb_agg(jsonb_build_object(\n        'fecha', fecha, 'accion', accion, 'cita_id', cita_id, 'detalle', detalle)\n        ORDER BY fecha)\n      FROM (SELECT * FROM bit ORDER BY fecha LIMIT 5000) x), '[]'::jsonb)\n) AS reporte;",
+        "options": {
+          "queryReplacement": "={{ $('Validar mes').first().json.mes }}, {{ $('Buscar sesion admin').first().json.usuario_id }}, {{ $('Validar mes').first().json.tipo }}, {{ $('Validar mes').first().json.usuario_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1120,
+        -176
+      ],
+      "id": "81aba3fa-e55b-4f9e-9bd5-bbb592ea4ed7",
+      "name": "Generar reporte",
+      "credentials": {
+        "postgres": {
+          "id": "ICEUfrnRBAkaWxXN",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.reporte) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1344,
+        -176
+      ],
+      "id": "f24114c3-23de-4666-b843-4f8b5bc94f15",
+      "name": "Reporte OK"
+    }
+  ],
+  "connections": {
+    "Recibir reporte": {
+      "main": [
+        [
+          {
+            "node": "Buscar sesion admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar sesion admin": {
+      "main": [
+        [
+          {
+            "node": "Es admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es admin": {
+      "main": [
+        [
+          {
+            "node": "Validar mes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Sin permiso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar mes": {
+      "main": [
+        [
+          {
+            "node": "Mes valido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mes valido": {
+      "main": [
+        [
+          {
+            "node": "Generar reporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Rechazar - Mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar reporte": {
+      "main": [
+        [
+          {
+            "node": "Reporte OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "62c1ba5a-e9c8-45c7-b4eb-f655e3327892",
+  "activeVersionId": "62c1ba5a-e9c8-45c7-b4eb-f655e3327892",
+  "versionCounter": 48,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-21T17:09:41.057Z",
+      "createdAt": "2026-10-21T17:09:41.057Z",
+      "role": "workflow:owner",
+      "workflowId": "hkzVWly5ugP6A9Yk",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "reportMes_v1",
+    "description": ""
+  }
+}

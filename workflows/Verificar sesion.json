@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-19T06:19:09.447Z",
+  "createdAt": "2026-10-09T19:16:54.937Z",
+  "id": "q7YgNsyrjSOnj94x",
   "name": "Verificar sesion",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -44,41 +50,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "loose",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "4807b409-fc39-4849-997d-c3030e64d5bc",
-              "leftValue": "={{ $json.id }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "looseTypeValidation": true,
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        448,
-        0
-      ],
-      "id": "54e1c98b-7094-45cd-8e2e-b50a9b4cbd63",
-      "name": "If"
-    },
-    {
-      "parameters": {
         "respondWith": "json",
         "responseBody": "={{ JSON.stringify({ valida: true, rol: $json.rol, usuario_id: $json.usuario_id }) }}",
         "options": {
@@ -110,9 +81,43 @@
       ],
       "id": "1ede7dfd-0232-4455-84a4-e5382f18be15",
       "name": "Sesion invalida"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4807b409-fc39-4849-997d-c3030e64d5bc",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "id": "54e1c98b-7094-45cd-8e2e-b50a9b4cbd63",
+      "name": "Sesion valida"
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir verificacion": {
       "main": [
@@ -129,14 +134,14 @@
       "main": [
         [
           {
-            "node": "If",
+            "node": "Sesion valida",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "If": {
+    "Sesion valida": {
       "main": [
         [
           {
@@ -155,17 +160,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "045d2afd-63d7-4c1e-983e-9d4789d2457d",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "q7YgNsyrjSOnj94x",
-  "tags": []
+  "pinData": {},
+  "versionId": "e38ed9f8-637b-49a0-9d05-b352d9d6e166",
+  "activeVersionId": "e38ed9f8-637b-49a0-9d05-b352d9d6e166",
+  "versionCounter": 28,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-09T19:16:54.937Z",
+      "createdAt": "2026-10-09T19:16:54.937Z",
+      "role": "workflow:owner",
+      "workflowId": "q7YgNsyrjSOnj94x",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version e38ed9f8",
+    "description": ""
+  }
 }

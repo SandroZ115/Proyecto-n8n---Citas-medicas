@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-13T06:45:58.270Z",
+  "createdAt": "2026-10-13T06:40:45.059Z",
+  "id": "EWW3gxDNVyzzPcdm",
   "name": "Listar especialidades",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -149,7 +155,6 @@
       "name": "Respond to Webhook"
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir listado esp": {
       "main": [
@@ -214,17 +219,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "df54f92b-d1bf-4f39-9b7d-42d40e78e4bf",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "EWW3gxDNVyzzPcdm",
-  "tags": []
+  "pinData": {},
+  "versionId": "df54f92b-d1bf-4f39-9b7d-42d40e78e4bf",
+  "activeVersionId": "df54f92b-d1bf-4f39-9b7d-42d40e78e4bf",
+  "versionCounter": 34,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-13T06:40:45.059Z",
+      "createdAt": "2026-10-13T06:40:45.059Z",
+      "role": "workflow:owner",
+      "workflowId": "EWW3gxDNVyzzPcdm",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "listarEsp_V2",
+    "description": ""
+  }
 }

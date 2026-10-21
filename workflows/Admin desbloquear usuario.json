@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-10T21:34:21.557Z",
+  "createdAt": "2026-10-10T07:45:56.793Z",
+  "id": "vACKQ0Q1snxy6s34",
   "name": "Admin desbloquear usuario",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -186,7 +192,6 @@
       "name": "Usuario no encontrado"
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir desbloqueo": {
       "main": [
@@ -258,17 +263,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "e5988716-98af-4917-9a70-b0002326892d",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "vACKQ0Q1snxy6s34",
-  "tags": []
+  "pinData": {},
+  "versionId": "e5988716-98af-4917-9a70-b0002326892d",
+  "activeVersionId": "e5988716-98af-4917-9a70-b0002326892d",
+  "versionCounter": 53,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-10T07:45:56.793Z",
+      "createdAt": "2026-10-10T07:45:56.793Z",
+      "role": "workflow:owner",
+      "workflowId": "vACKQ0Q1snxy6s34",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version e5988716",
+    "description": ""
+  }
 }

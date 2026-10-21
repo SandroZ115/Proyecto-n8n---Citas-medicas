@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-10-20T18:33:23.267Z",
+  "createdAt": "2026-09-13T23:23:09.611Z",
+  "id": "cXb8lCBcP0GBjXfY",
   "name": "Aprobar cita TOTP",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
@@ -361,7 +367,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT u.*\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW() AND u.rol = 'doctor';",
+        "query": "SELECT u.*\nFROM sesiones s\nJOIN usuarios u ON u.id = s.usuario_id\nWHERE s.token = $1 AND s.expira_en > NOW() AND u.rol = 'doctor' AND u.activo;",
         "options": {
           "queryReplacement": "={{ ($json.headers.authorization || 'sin-token').replace('Bearer ', '') }}"
         }
@@ -487,7 +493,6 @@
       "name": "Rechazar - Cita"
     }
   ],
-  "pinData": {},
   "connections": {
     "Recibir aprobacion": {
       "main": [
@@ -639,17 +644,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "cff7f679-716d-44e9-bd24-3e7be912fe3c",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "cXb8lCBcP0GBjXfY",
-  "tags": []
+  "pinData": {},
+  "versionId": "55e91ddc-7227-4699-9439-d98dfc4dc1d8",
+  "activeVersionId": "55e91ddc-7227-4699-9439-d98dfc4dc1d8",
+  "versionCounter": 75,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-13T23:23:09.611Z",
+      "createdAt": "2026-09-13T23:23:09.611Z",
+      "role": "workflow:owner",
+      "workflowId": "cXb8lCBcP0GBjXfY",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version 55e91ddc",
+    "description": ""
+  }
 }

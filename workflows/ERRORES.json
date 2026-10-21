@@ -1,5 +1,11 @@
 {
+  "updatedAt": "2026-09-13T23:46:02.159Z",
+  "createdAt": "2026-09-13T23:23:25.088Z",
+  "id": "wJG9evYzeFqz0Lbf",
   "name": "ERRORES",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {},
@@ -104,7 +110,6 @@
       }
     }
   ],
-  "pinData": {},
   "connections": {
     "Capturar ERROR": {
       "main": [
@@ -118,17 +123,44 @@
       ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "d5cd6420-048c-4902-82da-8f65826697bf",
+  "staticData": null,
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "wJG9evYzeFqz0Lbf",
-  "tags": []
+  "pinData": {},
+  "versionId": "d5cd6420-048c-4902-82da-8f65826697bf",
+  "activeVersionId": "d5cd6420-048c-4902-82da-8f65826697bf",
+  "versionCounter": 2,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-13T23:23:25.088Z",
+      "createdAt": "2026-09-13T23:23:25.088Z",
+      "role": "workflow:owner",
+      "workflowId": "wJG9evYzeFqz0Lbf",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "V1",
+    "description": ""
+  }
 }

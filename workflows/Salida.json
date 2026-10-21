@@ -1,12 +1,18 @@
 {
+  "updatedAt": "2026-10-21T03:51:36.963Z",
+  "createdAt": "2026-09-13T23:25:46.621Z",
+  "id": "FcHDBo3zErmzXQfv",
   "name": "Salida",
+  "description": null,
+  "active": true,
+  "isArchived": false,
   "nodes": [
     {
       "parameters": {
         "rule": {
           "interval": [
             {
-              "field": "seconds"
+              "field": "hours"
             }
           ]
         }
@@ -14,8 +20,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        0,
-        0
+        -240,
+        16
       ],
       "id": "02c4e939-cf2c-4669-8d44-a7d90d6bd430",
       "name": "Revisar asignadas"
@@ -23,14 +29,14 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT * FROM solicitudes_citas WHERE estado = 'asignada';",
+        "query": "SELECT c.id, c.nombre_paciente, c.correo_paciente, c.especialidad, c.horario_asignado\nFROM solicitudes_citas c\nWHERE c.estado = 'asignada'\nORDER BY c.id\nLIMIT 10;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        224,
-        0
+        -16,
+        16
       ],
       "id": "d9edff94-324b-492c-8e45-57796d168835",
       "name": "Traer citas asignadas",
@@ -40,20 +46,6 @@
           "name": "Postgres account"
         }
       }
-    },
-    {
-      "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const item = $input.item.json;\nconst mensaje = `Estimado/a ${item.nombre_paciente}, su cita de ${item.especialidad} ha sido confirmada.`;\n\nreturn {\n  json: {\n    ...item,\n    mensaje_sms: mensaje,\n    notificado_en: new Date().toISOString()\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        448,
-        0
-      ],
-      "id": "8ee53445-9b7e-4ba5-85d9-0e3aa82b5751",
-      "name": "Generar mensaje SMS"
     },
     {
       "parameters": {
@@ -71,9 +63,9 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "cita_id": "={{ $json.id }}",
-            "accion": "notificacion_enviada",
-            "detalle": "={{ $json.mensaje_sms }}"
+            "cita_id": "={{ $json.cita_id }}",
+            "accion": "={{ $json.accion_envio }}",
+            "detalle": "={{ $json.detalle_envio }}"
           },
           "matchingColumns": [
             "id"
@@ -138,8 +130,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        672,
-        0
+        1728,
+        -224
       ],
       "id": "bcf1e744-f466-4880-8990-34e540be06f6",
       "name": "Registrar Notificacion",
@@ -155,14 +147,14 @@
         "operation": "executeQuery",
         "query": "UPDATE solicitudes_citas SET estado = 'notificada' WHERE id = $1 RETURNING id;",
         "options": {
-          "queryReplacement": "={{ $json.cita_id }}"
+          "queryReplacement": "={{ [$json.cita_id] }}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        896,
-        0
+        1952,
+        -224
       ],
       "id": "fe1d76f4-bb95-41f4-9bdb-7a8d9f6577e6",
       "name": "Marcar notificada",
@@ -172,9 +164,222 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const c = $input.item.json;\nconst correo = String(c.correo_paciente || '').trim();\nconst fecha = new Date(c.horario_asignado).toLocaleString('es-GT', {\n  timeZone: 'America/Guatemala',\n  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',\n  hour: '2-digit', minute: '2-digit'\n});\n\nreturn {\n  json: {\n    id: c.id,\n    correo_paciente: correo,\n    tiene_correo: correo.length > 0,\n    asunto: 'Confirmación de su cita en MediNova',\n    texto: `Estimado/a ${c.nombre_paciente}:\\n\\nSu cita de ${c.especialidad} ha sido confirmada para el ${fecha} (hora de Guatemala).\\n\\nSi no puede asistir, comuníquese con la clínica para reprogramarla.\\n\\nMediNova`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "d2c78d90-16af-4d86-813d-9c5b83106f66",
+      "name": "Armar correo"
+    },
+    {
+      "parameters": {
+        "fromEmail": "MediNova <TU_CORREO@gmail.com>",
+        "toEmail": "={{ $json.correo_paciente }}",
+        "subject": "={{ $json.asunto }}",
+        "emailFormat": "text",
+        "text": "={{ $json.texto }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        976,
+        -256
+      ],
+      "id": "284de332-7815-47fb-8b71-c754c35d3f5f",
+      "name": "Enviar correo",
+      "webhookId": "bf773add-08b5-4bc7-93b1-28528f733292",
+      "credentials": {
+        "smtp": {
+          "id": "v6Dh8D2bwTCR6Vty",
+          "name": "SMTP account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "070626fa-93ef-4b83-b8eb-6df596b63811",
+              "name": "cita_id",
+              "value": "={{ $('Armar correo').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "d9f66d79-af84-4300-b309-69b9f48f9947",
+              "name": "accion_envio",
+              "value": "notificacion_enviada",
+              "type": "string"
+            },
+            {
+              "id": "010c5b94-e5ff-4a59-882c-eb7b41afb8ff",
+              "name": "detalle_envio",
+              "value": "Correo enviado al paciente",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1264,
+        -464
+      ],
+      "id": "24c1fbe7-aa5f-4765-bd7c-852b52d2af78",
+      "name": "Estado enviado"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae8dfd20-3fc7-4adb-bb72-dc5aec564d05",
+              "name": "=cita_id",
+              "value": "={{ $('Armar correo').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7d6e92ee-dbd1-4b84-b869-6d0b5d7c2fa7",
+              "name": "accion_envio",
+              "value": "notificacion_fallida",
+              "type": "string"
+            },
+            {
+              "id": "e843e496-df7c-49a5-94d5-09749d2df538",
+              "name": "detalle_envio",
+              "value": "={{ 'Error al enviar el correo: ' + String($json.error?.message || $json.message || 'Error desconocido') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1296,
+        -224
+      ],
+      "id": "a3f2d75c-eb0e-4232-900e-e76546444537",
+      "name": "Estado fallido"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ab9bc29b-991d-4b10-b48e-41b596e8b131",
+              "leftValue": "={{ $json.tiene_correo }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "57f7fd9e-1389-4f9f-b63f-43a52baeefb0",
+      "name": "Tiene correo"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bd446e9c-69cd-405f-b55d-849c064a26a1",
+              "name": "cita_id",
+              "value": "={{ $('Armar correo').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "310634ae-b615-47b3-ba04-f5cee3eb67bb",
+              "name": "accion_envio",
+              "value": "notificacion_sin_correo",
+              "type": "string"
+            },
+            {
+              "id": "d7ea9ff4-d4ea-4d5f-bf6b-6ead1c5c8952",
+              "name": "detalle_envio",
+              "value": "La cita no tiene correo del paciente",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1296,
+        0
+      ],
+      "id": "48e441a0-ae55-4e17-b9dd-8f1c25ee9f58",
+      "name": "Estado sin correo"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "de7d81bf-fa39-44dd-9231-be9eca9b19b5",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        16
+      ],
+      "id": "73bb271b-cef6-454d-a30f-0817f49c18a2",
+      "name": "If"
     }
   ],
-  "pinData": {},
   "connections": {
     "Revisar asignadas": {
       "main": [
@@ -191,18 +396,7 @@
       "main": [
         [
           {
-            "node": "Generar mensaje SMS",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Generar mensaje SMS": {
-      "main": [
-        [
-          {
-            "node": "Registrar Notificacion",
+            "node": "If",
             "type": "main",
             "index": 0
           }
@@ -219,19 +413,146 @@
           }
         ]
       ]
+    },
+    "Armar correo": {
+      "main": [
+        [
+          {
+            "node": "Tiene correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar correo": {
+      "main": [
+        [
+          {
+            "node": "Estado enviado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado fallido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado enviado": {
+      "main": [
+        [
+          {
+            "node": "Registrar Notificacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tiene correo": {
+      "main": [
+        [
+          {
+            "node": "Enviar correo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Estado sin correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado fallido": {
+      "main": [
+        [
+          {
+            "node": "Registrar Notificacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Estado sin correo": {
+      "main": [
+        [
+          {
+            "node": "Registrar Notificacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Armar correo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "a521b64f-ab35-4524-b425-9fd6b92d1c88",
+  "staticData": {
+    "node:Revisar asignadas": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    }
+  },
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "088867b6f17d45b4faeef010c1899e5cafb316e90afe847b90347cf8c24e071e"
+    "templateCredsSetupCompleted": true
   },
   "nodeGroups": [],
-  "id": "FcHDBo3zErmzXQfv",
-  "tags": []
+  "pinData": {},
+  "versionId": "aa47dc03-5ae8-4f23-9275-08f03f6bd3bc",
+  "activeVersionId": "aa47dc03-5ae8-4f23-9275-08f03f6bd3bc",
+  "versionCounter": 114,
+  "triggerCount": 1,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-09-13T23:25:46.621Z",
+      "createdAt": "2026-09-13T23:25:46.621Z",
+      "role": "workflow:owner",
+      "workflowId": "FcHDBo3zErmzXQfv",
+      "projectId": "LgOgtG3YHLDVvE4S",
+      "project": {
+        "updatedAt": "2026-09-13T23:16:07.469Z",
+        "createdAt": "2026-09-13T22:52:18.465Z",
+        "id": "LgOgtG3YHLDVvE4S",
+        "name": "Anthony Mo <amoc@miumg.edu.gt>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "fae22474-dd1e-4ad4-a411-1333fa491106"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": "Version aa47dc03",
+    "description": ""
+  }
 }
