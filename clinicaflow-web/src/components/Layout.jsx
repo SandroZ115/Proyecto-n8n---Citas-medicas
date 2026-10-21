@@ -358,7 +358,9 @@ export default function Layout() {
                 </span>
               )}
 
-              <Badge variant="neutral">{rol}</Badge>
+              <Badge variant="neutral" className="usuario-rol">
+                {rol}
+              </Badge>
 
               <button
                 type="button"

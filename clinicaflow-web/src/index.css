@@ -449,6 +449,14 @@ a:focus-visible {
   letter-spacing: 0.02em;
 }
 
+.usuario-rol.ui-badge {
+  background: #C9DED3;
+  color: #063A2A;
+  border: 1px solid #AECBBE;
+  font-size: 13px;
+  padding: 5px 13px;
+}
+
 .usuario-menu-boton {
   display: inline-flex;
   align-items: center;
@@ -663,6 +671,8 @@ a:focus-visible {
 }
 
 .login-panel {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -670,6 +680,23 @@ a:focus-visible {
   padding: 56px 48px;
   background: var(--sidebar);
   color: #FFFFFF;
+}
+
+.login-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('./images/caduceo.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.login-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .login-panel__nombre {
