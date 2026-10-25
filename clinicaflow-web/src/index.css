@@ -17,19 +17,67 @@
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
-  min-height: 100vh;
+  overflow-x: clip;
+}
+
+body {
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+img,
+svg,
+video,
+canvas,
+audio,
+iframe,
+embed,
+object {
+  max-width: 100%;
+  height: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  overflow-wrap: anywhere;
+}
+
+table,
+thead,
+tbody,
+tr,
+th,
+td {
+  min-width: 0;
+}
+
+.flex,
+.grid {
+  min-width: 0;
 }
 
 h1,
@@ -44,6 +92,13 @@ input,
 select,
 textarea {
   font-family: inherit;
+  min-height: 44px;
+}
+
+input,
+select,
+textarea {
+  font-size: 16px;
 }
 
 button:focus-visible,
@@ -56,12 +111,24 @@ a:focus-visible {
 }
 
 .contenedor {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 16px;
   background: var(--sidebar);
+}
+
+@media (min-width: 641px) {
+  .contenedor {
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .contenedor {
+    padding: 32px;
+  }
 }
 
 .tarjeta {
@@ -74,7 +141,8 @@ a:focus-visible {
 }
 
 .tarjeta-ancha {
-  max-width: 760px;
+  width: 100%;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -264,7 +332,7 @@ a:focus-visible {
 }
 
 .layout {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   background: var(--bg);
 }
@@ -277,6 +345,7 @@ a:focus-visible {
   gap: 8px;
   background: var(--sidebar);
   padding: 22px 14px;
+  min-height: 100dvh;
 }
 
 .menu-cabecera {
@@ -381,6 +450,7 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 100dvh;
 }
 
 .barra {
@@ -478,6 +548,13 @@ a:focus-visible {
   border: 1px solid #AECBBE;
   font-size: 13px;
   padding: 5px 13px;
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .usuario-rol.ui-badge {
+    display: inline-flex;
+  }
 }
 
 .usuario-menu-boton {
@@ -537,7 +614,19 @@ a:focus-visible {
 }
 
 .main {
-  padding: 32px 24px 56px;
+  padding: 16px 16px 40px;
+}
+
+@media (min-width: 641px) {
+  .main {
+    padding: 24px 24px 48px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .main {
+    padding: 32px 32px 56px;
+  }
 }
 
 .main-contenido {
@@ -546,7 +635,7 @@ a:focus-visible {
   margin: 0 auto;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 899px) {
   .menu {
     position: fixed;
     top: 0;
@@ -595,6 +684,33 @@ a:focus-visible {
     right: 12px;
     width: 140px;
     height: 140px;
+  }
+}
+
+@media (min-width: 640px) {
+  .usuario-correo {
+    display: block;
+  }
+}
+
+@media (min-width: 900px) {
+  .menu {
+    position: static;
+    transform: none;
+    visibility: visible;
+    background: var(--sidebar);
+  }
+
+  .menu-velo {
+    display: none;
+  }
+
+  .boton-menu {
+    display: none;
+  }
+
+  .barra {
+    padding: 12px 24px;
   }
 }
 
@@ -695,21 +811,33 @@ a:focus-visible {
 /* Login */
 
 .login {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(340px, 44%) 1fr;
+  grid-template-columns: 1fr;
 }
 
 .login-panel {
   position: relative;
   overflow: hidden;
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: center;
   gap: 26px;
-  padding: 56px 48px;
+  padding: 32px 24px;
   background: var(--sidebar);
   color: #FFFFFF;
+}
+
+@media (min-width: 641px) {
+  .login-panel {
+    padding: 40px 32px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .login-panel {
+    padding: 56px 48px;
+  }
 }
 
 .login-panel::before {
@@ -773,14 +901,40 @@ a:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px;
+  padding: 24px 16px;
   background: var(--bg);
+}
+
+@media (min-width: 641px) {
+  .login-columna {
+    padding: 32px 24px;
+    align-items: flex-start;
+  }
+}
+
+@media (min-width: 1025px) {
+  .login-columna {
+    padding: 40px 24px;
+    align-items: center;
+  }
 }
 
 .login-card {
   width: 100%;
   max-width: 420px;
-  padding: 32px;
+  padding: 24px;
+}
+
+@media (min-width: 641px) {
+  .login-card {
+    padding: 28px;
+  }
+}
+
+@media (min-width: 1025px) {
+  .login-card {
+    padding: 32px;
+  }
 }
 
 .login-card .titulo {
@@ -867,6 +1021,7 @@ a:focus-visible {
 
 .login-campo-codigo .ui-field__control {
   height: 62px;
+  min-height: 62px;
   font-size: 24px;
   font-weight: 600;
   text-align: center;
@@ -897,13 +1052,19 @@ a:focus-visible {
   width: 100%;
 }
 
-@media (max-width: 900px) {
+@media (min-width: 641px) {
+  .login-panel {
+    display: flex;
+  }
+}
+
+@media (min-width: 1025px) {
   .login {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(340px, 44%) 1fr;
   }
 
   .login-panel {
-    display: none;
+    display: flex;
   }
 }
 
@@ -1130,7 +1291,7 @@ a:focus-visible {
 
 .reportes-controles {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr;
   gap: 0 16px;
   align-items: end;
   margin-bottom: 20px;
@@ -1140,8 +1301,28 @@ a:focus-visible {
   background: var(--surface);
 }
 
+@media (min-width: 641px) {
+  .reportes-controles {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
 .reportes-controles .campo {
   margin-bottom: 12px;
+}
+
+.reportes-acciones-controles {
+  grid-column: 1 / -1;
+}
+
+.reportes-acciones-controles .ui-btn {
+  width: 100%;
+}
+
+@media (min-width: 641px) {
+  .reportes-acciones-controles .ui-btn {
+    width: auto;
+  }
 }
 
 .reportes-badges {
@@ -1165,11 +1346,12 @@ a:focus-visible {
   background: var(--accent-soft);
   color: var(--accent);
   font-size: 14px;
+  width: 100%;
 }
 
 .reportes-tarjetas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -1207,6 +1389,16 @@ a:focus-visible {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+
+.reportes-acciones-descarga .ui-btn {
+  width: 100%;
+}
+
+@media (min-width: 641px) {
+  .reportes-acciones-descarga .ui-btn {
+    width: auto;
+  }
 }
 
 .solo-imprimir {

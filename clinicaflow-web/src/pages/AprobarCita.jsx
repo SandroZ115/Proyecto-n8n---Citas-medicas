@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listarPendientes, aprobarCita } from '../services/api'
 import { cerrarSesionVencida } from '../services/sesion'
+import TablaResponsiva from '../components/TablaResponsiva'
 
 function fechaLegible(valor) {
   if (!valor) return ''
@@ -112,37 +113,44 @@ export default function AprobarCita() {
       )}
 
       {!cargando && citas.length > 0 && (
-        <table className="tabla">
-          <thead>
-            <tr>
-              <th>Paciente</th>
-              <th>Especialidad</th>
-              <th>Urgencia</th>
-              <th>Horario asignado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {citas.map((cita) => (
-              <tr key={cita.id}>
-                <td>{cita.nombre_paciente}</td>
-                <td>{cita.especialidad}</td>
-                <td className={cita.urgencia === 'alta' ? 'urgencia-alta' : ''}>
-                  {cita.urgencia}
-                </td>
-                <td>{fechaLegible(cita.horario_asignado)}</td>
-                <td>
-                  <button
-                    className="boton-secundario"
-                    onClick={() => revisar(cita)}
-                  >
-                    Revisar
-                  </button>
-                </td>
+        <TablaResponsiva className="tabla-responsiva--apilada">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Especialidad</th>
+                <th>Urgencia</th>
+                <th>Horario asignado</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {citas.map((cita) => (
+                <tr key={cita.id}>
+                  <td data-label="Paciente">{cita.nombre_paciente}</td>
+                  <td data-label="Especialidad">{cita.especialidad}</td>
+                  <td
+                    data-label="Urgencia"
+                    className={cita.urgencia === 'alta' ? 'urgencia-alta' : ''}
+                  >
+                    {cita.urgencia}
+                  </td>
+                  <td data-label="Horario asignado">
+                    {fechaLegible(cita.horario_asignado)}
+                  </td>
+                  <td data-label="Acciones" data-acciones>
+                    <button
+                      className="boton-secundario"
+                      onClick={() => revisar(cita)}
+                    >
+                      Revisar
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TablaResponsiva>
       )}
 
       {exito && <p className="exito">{exito}</p>}

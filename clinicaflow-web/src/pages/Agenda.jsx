@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { agenda, listarEspecialidades } from '../services/api'
 import { cerrarSesionVencida } from '../services/sesion'
+import TablaResponsiva from '../components/TablaResponsiva'
 
 function fechaISO(d) {
   const anio = d.getFullYear()
@@ -315,60 +316,67 @@ export default function Agenda() {
       )}
 
       {!cargando && !errorCarga && citasFiltradas.length > 0 && (
-        <table className="tabla">
-          <thead>
-            <tr>
-              <th>Fecha y hora</th>
-              <th>Paciente</th>
-              <th>Especialidad</th>
-              <th>Doctor</th>
-              <th>Urgencia</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {citasFiltradas.map((cita) => {
-              const estado = etiquetaEstado(cita.estado)
-              const puedeCancelar =
-                cita.estado !== 'completada' && cita.estado !== 'cancelada'
-              const puedeCompletar = veCompletar && estado === 'Confirmada'
+        <TablaResponsiva className="tabla-responsiva--apilada">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Fecha y hora</th>
+                <th>Paciente</th>
+                <th>Especialidad</th>
+                <th>Doctor</th>
+                <th>Urgencia</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {citasFiltradas.map((cita) => {
+                const estado = etiquetaEstado(cita.estado)
+                const puedeCancelar =
+                  cita.estado !== 'completada' && cita.estado !== 'cancelada'
+                const puedeCompletar = veCompletar && estado === 'Confirmada'
 
-              return (
-                <tr key={cita.id}>
-                  <td>{fechaLocal(cita.fecha_hora ?? cita.horario_asignado)}</td>
-                  <td>{cita.nombre_paciente}</td>
-                  <td>{cita.especialidad}</td>
-                  <td>{doctorDe(cita)}</td>
-                  <td className={cita.urgencia === 'alta' ? 'urgencia-alta' : ''}>
-                    {cita.urgencia}
-                  </td>
-                  <td>{estado}</td>
-                  <td>
-                    {puedeCancelar && (
-                      <button
-                        className="boton-secundario"
-                        onClick={() => ejecutarAccion('cancelar', cita)}
-                        disabled={enviando}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                    {puedeCompletar && (
-                      <button
-                        className="boton-secundario"
-                        onClick={() => ejecutarAccion('completar', cita)}
-                        disabled={enviando}
-                      >
-                        Completar
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr key={cita.id}>
+                    <td data-label="Fecha y hora">
+                      {fechaLocal(cita.fecha_hora ?? cita.horario_asignado)}
+                    </td>
+                    <td data-label="Paciente">{cita.nombre_paciente}</td>
+                    <td data-label="Especialidad">{cita.especialidad}</td>
+                    <td data-label="Doctor">{doctorDe(cita)}</td>
+                    <td
+                      data-label="Urgencia"
+                      className={cita.urgencia === 'alta' ? 'urgencia-alta' : ''}
+                    >
+                      {cita.urgencia}
+                    </td>
+                    <td data-label="Estado">{estado}</td>
+                    <td data-label="Acciones" data-acciones>
+                      {puedeCancelar && (
+                        <button
+                          className="boton-secundario"
+                          onClick={() => ejecutarAccion('cancelar', cita)}
+                          disabled={enviando}
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      {puedeCompletar && (
+                        <button
+                          className="boton-secundario"
+                          onClick={() => ejecutarAccion('completar', cita)}
+                          disabled={enviando}
+                        >
+                          Completar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </TablaResponsiva>
       )}
 
       {veAsignacion && (
@@ -386,54 +394,57 @@ export default function Agenda() {
           )}
 
           {sinAsignar.length > 0 && (
-            <table className="tabla">
-              <thead>
-                <tr>
-                  <th>Paciente</th>
-                  <th>Especialidad</th>
-                  <th>Urgencia</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sinAsignar.map((solicitud) => (
-                  <tr key={solicitud.id}>
-                    <td>{solicitud.nombre_paciente}</td>
-                    <td>{solicitud.especialidad}</td>
-                    <td
-                      className={
-                        solicitud.urgencia === 'alta' ? 'urgencia-alta' : ''
-                      }
-                    >
-                      {solicitud.urgencia}
-                    </td>
-                    <td>
-                      <button
-                        className="boton-secundario"
-                        onClick={() =>
-                          navigate('/dashboard/nueva', {
-                            state: {
-                              nombre_paciente: solicitud.nombre_paciente,
-                              urgencia: solicitud.urgencia,
-                            },
-                          })
-                        }
-                        disabled={enviando}
-                      >
-                        Agendar
-                      </button>{' '}
-                      <button
-                        className="boton-secundario"
-                        onClick={() => cancelarSinAsignar(solicitud)}
-                        disabled={enviando}
-                      >
-                        Cancelar
-                      </button>
-                    </td>
+            <TablaResponsiva className="tabla-responsiva--apilada">
+              <table className="tabla">
+                <thead>
+                  <tr>
+                    <th>Paciente</th>
+                    <th>Especialidad</th>
+                    <th>Urgencia</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sinAsignar.map((solicitud) => (
+                    <tr key={solicitud.id}>
+                      <td data-label="Paciente">{solicitud.nombre_paciente}</td>
+                      <td data-label="Especialidad">{solicitud.especialidad}</td>
+                      <td
+                        data-label="Urgencia"
+                        className={
+                          solicitud.urgencia === 'alta' ? 'urgencia-alta' : ''
+                        }
+                      >
+                        {solicitud.urgencia}
+                      </td>
+                      <td data-label="Acciones" data-acciones>
+                        <button
+                          className="boton-secundario"
+                          onClick={() =>
+                            navigate('/dashboard/nueva', {
+                              state: {
+                                nombre_paciente: solicitud.nombre_paciente,
+                                urgencia: solicitud.urgencia,
+                              },
+                            })
+                          }
+                          disabled={enviando}
+                        >
+                          Agendar
+                        </button>
+                        <button
+                          className="boton-secundario"
+                          onClick={() => cancelarSinAsignar(solicitud)}
+                          disabled={enviando}
+                        >
+                          Cancelar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TablaResponsiva>
           )}
         </div>
       )}

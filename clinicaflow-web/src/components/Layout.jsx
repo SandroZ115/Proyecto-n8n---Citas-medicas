@@ -234,6 +234,7 @@ export default function Layout() {
     function conEscape(evento) {
       if (evento.key === 'Escape') {
         setMenuUsuarioAbierto(false)
+        setMenuAbierto(false)
       }
     }
 
@@ -268,6 +269,11 @@ export default function Layout() {
     }
   }, [correo])
 
+  useEffect(() => {
+    setMenuAbierto(false)
+    setMenuUsuarioAbierto(false)
+  }, [location.pathname])
+
   function cerrarSesion() {
     sessionStorage.clear()
     navigate('/')
@@ -298,7 +304,11 @@ export default function Layout() {
 
   return (
     <div className="layout">
-      <aside className={`menu${menuAbierto ? ' menu--abierto' : ''}`}>
+      <aside
+        className={`menu${menuAbierto ? ' menu--abierto' : ''}`}
+        role={menuAbierto ? 'dialog' : undefined}
+        aria-modal={menuAbierto ? true : undefined}
+      >
         <div className="menu-cabecera">
           <span className="menu-titulo">
             <Link
@@ -377,9 +387,11 @@ export default function Layout() {
                 </span>
               )}
 
-              <Badge variant="neutral" className="usuario-rol">
-                {rol}
-              </Badge>
+              {rol && (
+                <Badge variant="neutral" className="usuario-rol">
+                  {rol}
+                </Badge>
+              )}
 
               <button
                 type="button"

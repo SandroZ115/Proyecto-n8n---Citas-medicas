@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import { useToast } from '../components/ui/Toast'
+import TablaResponsiva from '../components/TablaResponsiva'
 
 const ZONA = 'America/Guatemala'
 const LIMITE_BITACORA = 5000
@@ -443,7 +444,7 @@ export default function Reportes() {
           </div>
         )}
 
-        <div className="reportes-acciones">
+        <div className="reportes-acciones reportes-acciones-controles">
           <Button variant="secondary" onClick={usarMesActual}>
             Mes actual
           </Button>
@@ -522,34 +523,39 @@ export default function Reportes() {
           {tablas.map((tabla) => (
             <section key={tabla.id} className="reportes-bloque">
               <h2 className="reportes-subtitulo">{tabla.titulo}</h2>
-              <table className="tabla">
-                <thead>
-                  <tr>
-                    {tabla.columnas.map((columna) => (
-                      <th key={columna}>{columna}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {tabla.filas.length === 0 ? (
+              <TablaResponsiva className="tabla-responsiva--pequena">
+                <table className="tabla">
+                  <thead>
                     <tr>
-                      <td colSpan={tabla.columnas.length}>Sin datos</td>
+                      {tabla.columnas.map((columna) => (
+                        <th key={columna}>{columna}</th>
+                      ))}
                     </tr>
-                  ) : (
-                    tabla.filas.map((fila, indice) => (
-                      <tr key={`${tabla.id}-${indice}`}>
-                        {fila.map((celda, posicion) => (
-                          <td key={posicion}>{textoCelda(celda)}</td>
-                        ))}
+                  </thead>
+                  <tbody>
+                    {tabla.filas.length === 0 ? (
+                      <tr>
+                        <td colSpan={tabla.columnas.length}>Sin datos</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      tabla.filas.map((fila, indice) => (
+                        <tr key={`${tabla.id}-${indice}`}>
+                          {fila.map((celda, posicion) => (
+                            <td key={posicion}>
+                              <strong>{tabla.columnas[posicion]}:</strong>{' '}
+                              {textoCelda(celda)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </TablaResponsiva>
             </section>
           ))}
 
-          <div className="reportes-acciones no-imprimir">
+          <div className="reportes-acciones no-imprimir reportes-acciones-descarga">
             <Button variant="secondary" onClick={descargarResumen}>
               Descargar resumen (CSV)
             </Button>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listarEspecialidades, adminEspecialidades } from '../services/api'
+import TablaResponsiva from '../components/TablaResponsiva'
 
 export default function Especialidades() {
   const [especialidades, setEspecialidades] = useState([])
@@ -104,41 +105,43 @@ export default function Especialidades() {
       )}
 
       {!cargando && especialidades.length > 0 && (
-        <table className="tabla">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {especialidades.map((esp) => (
-              <tr key={esp.id}>
-                <td>{esp.nombre}</td>
-                <td>{esp.descripcion}</td>
-                <td>{esp.activo ? 'Activa' : 'Inactiva'}</td>
-                <td>
-                  <button
-                    className="boton-secundario"
-                    onClick={() => abrirEdicion(esp)}
-                    disabled={enviando}
-                  >
-                    Editar
-                  </button>{' '}
-                  <button
-                    className="boton-secundario"
-                    onClick={() => alternarEstado(esp)}
-                    disabled={enviando}
-                  >
-                    {esp.activo ? 'Desactivar' : 'Activar'}
-                  </button>
-                </td>
+        <TablaResponsiva className="tabla-responsiva--apilada">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {especialidades.map((esp) => (
+                <tr key={esp.id}>
+                  <td data-label="Nombre">{esp.nombre}</td>
+                  <td data-label="Descripción">{esp.descripcion}</td>
+                  <td data-label="Estado">{esp.activo ? 'Activa' : 'Inactiva'}</td>
+                  <td data-label="Acciones" data-acciones>
+                    <button
+                      className="boton-secundario"
+                      onClick={() => abrirEdicion(esp)}
+                      disabled={enviando}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="boton-secundario"
+                      onClick={() => alternarEstado(esp)}
+                      disabled={enviando}
+                    >
+                      {esp.activo ? 'Desactivar' : 'Activar'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TablaResponsiva>
       )}
 
       {mensaje && <p className="exito">{mensaje}</p>}

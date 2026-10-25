@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { adminUsuarios, desbloquearUsuario } from '../services/api'
 import { cerrarSesionVencida } from '../services/sesion'
+import TablaResponsiva from '../components/TablaResponsiva'
 
 export default function Usuarios() {
   const navigate = useNavigate()
@@ -151,59 +152,65 @@ export default function Usuarios() {
       )}
 
       {!cargando && visibles.length > 0 && (
-        <table className="tabla">
-          <thead>
-            <tr>
-              <th>Correo</th>
-              <th>Rol</th>
-              <th>Especialidad</th>
-              <th>Estado</th>
-              <th>Bloqueado</th>
-              <th>Citas abiertas</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibles.map((u) => (
-              <tr key={u.id}>
-                <td>{u.correo}</td>
-                <td>{u.rol}</td>
-                <td>{u.rol === 'doctor' ? (u.especialidad ?? '') : ''}</td>
-                <td>{u.activo ? 'Activo' : 'Dado de baja'}</td>
-                <td>{u.bloqueado ? 'Sí' : 'No'}</td>
-                <td>{u.rol === 'doctor' ? (u.citas_abiertas ?? 0) : ''}</td>
-                <td>
-                  {u.activo ? (
-                    <button
-                      className="boton-secundario"
-                      onClick={() => darDeBaja(u)}
-                      disabled={enviando}
-                    >
-                      Dar de baja
-                    </button>
-                  ) : (
-                    <button
-                      className="boton-secundario"
-                      onClick={() => reactivar(u)}
-                      disabled={enviando}
-                    >
-                      Reactivar
-                    </button>
-                  )}{' '}
-                  {u.bloqueado && (
-                    <button
-                      className="boton-secundario"
-                      onClick={() => desbloquear(u.correo)}
-                      disabled={enviando}
-                    >
-                      Desbloquear
-                    </button>
-                  )}
-                </td>
+        <TablaResponsiva className="tabla-responsiva--apilada">
+          <table className="tabla">
+            <thead>
+              <tr>
+                <th>Correo</th>
+                <th>Rol</th>
+                <th>Especialidad</th>
+                <th>Estado</th>
+                <th>Bloqueado</th>
+                <th>Citas abiertas</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {visibles.map((u) => (
+                <tr key={u.id}>
+                  <td data-label="Correo">{u.correo}</td>
+                  <td data-label="Rol">{u.rol}</td>
+                  <td data-label="Especialidad">
+                    {u.rol === 'doctor' ? (u.especialidad ?? '') : ''}
+                  </td>
+                  <td data-label="Estado">{u.activo ? 'Activo' : 'Dado de baja'}</td>
+                  <td data-label="Bloqueado">{u.bloqueado ? 'Sí' : 'No'}</td>
+                  <td data-label="Citas abiertas">
+                    {u.rol === 'doctor' ? (u.citas_abiertas ?? 0) : ''}
+                  </td>
+                  <td data-label="Acciones" data-acciones>
+                    {u.activo ? (
+                      <button
+                        className="boton-secundario"
+                        onClick={() => darDeBaja(u)}
+                        disabled={enviando}
+                      >
+                        Dar de baja
+                      </button>
+                    ) : (
+                      <button
+                        className="boton-secundario"
+                        onClick={() => reactivar(u)}
+                        disabled={enviando}
+                      >
+                        Reactivar
+                      </button>
+                    )}
+                    {u.bloqueado && (
+                      <button
+                        className="boton-secundario"
+                        onClick={() => desbloquear(u.correo)}
+                        disabled={enviando}
+                      >
+                        Desbloquear
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </TablaResponsiva>
       )}
 
       {mensaje && <p className="exito">{mensaje}</p>}

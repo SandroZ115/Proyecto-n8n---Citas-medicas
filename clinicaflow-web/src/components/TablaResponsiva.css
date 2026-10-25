@@ -1,0 +1,84 @@
+.tabla-responsiva {
+  margin-bottom: 16px;
+}
+
+.tabla-responsiva__contenedor {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset -12px 0 12px -12px rgba(15, 42, 34, 0.18);
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabla-responsiva__contenedor .tabla {
+  margin-bottom: 0;
+}
+
+.tabla-responsiva__contenedor .tabla th,
+.tabla-responsiva__contenedor .tabla td {
+  white-space: nowrap;
+}
+
+.tabla-responsiva--apilada .tabla thead {
+  display: none;
+}
+
+.tabla-responsiva--apilada .tabla,
+.tabla-responsiva--apilada .tabla tbody,
+.tabla-responsiva--apilada .tabla tr,
+.tabla-responsiva--apilada .tabla td {
+  display: block;
+  width: 100%;
+}
+
+.tabla-responsiva--apilada .tabla tr {
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.tabla-responsiva--apilada .tabla tbody tr:hover {
+  background: var(--surface);
+}
+
+.tabla-responsiva--apilada .tabla td {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: right;
+  white-space: normal;
+}
+
+.tabla-responsiva--apilada .tabla td::before {
+  content: attr(data-label);
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+
+.tabla-responsiva--apilada .tabla td[data-acciones] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: left;
+}
+
+.tabla-responsiva--apilada .tabla td[data-acciones]::before {
+  content: none;
+}
+
+.tabla-responsiva--apilada .tabla td:last-child {
+  border-bottom: none;
+}
+
+.tabla-responsiva--pequena .tabla th,
+.tabla-responsiva--pequena .tabla td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
