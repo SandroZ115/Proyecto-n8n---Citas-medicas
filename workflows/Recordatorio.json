@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-21T03:51:18.454Z",
+  "updatedAt": "2026-10-25T01:23:04.589Z",
   "createdAt": "2026-09-13T23:23:59.581Z",
   "id": "IpbwBRAtkRCL6jtz",
   "name": "Recordatorio",
@@ -470,7 +470,11 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "wJG9evYzeFqz0Lbf",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": {
     "node:Revisar citas del siguiente dia": {
@@ -497,7 +501,7 @@
   "pinData": {},
   "versionId": "1e379672-8fc9-4fab-ac03-cb9c97ebbcb0",
   "activeVersionId": "1e379672-8fc9-4fab-ac03-cb9c97ebbcb0",
-  "versionCounter": 86,
+  "versionCounter": 87,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

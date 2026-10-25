@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-14T18:18:36.269Z",
+  "updatedAt": "2026-10-25T01:21:49.591Z",
   "createdAt": "2026-10-11T21:09:13.851Z",
   "id": "qzBHXnZt6ulbKTOv",
   "name": "Listar citas",
@@ -221,7 +221,11 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "wJG9evYzeFqz0Lbf",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": null,
   "meta": {
@@ -231,7 +235,7 @@
   "pinData": {},
   "versionId": "a7afd3b2-fb3b-4259-a02d-0a25ebf9d231",
   "activeVersionId": "a7afd3b2-fb3b-4259-a02d-0a25ebf9d231",
-  "versionCounter": 44,
+  "versionCounter": 45,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

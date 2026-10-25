@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-10T21:34:21.557Z",
+  "updatedAt": "2026-10-25T01:18:30.750Z",
   "createdAt": "2026-10-10T07:45:56.793Z",
   "id": "vACKQ0Q1snxy6s34",
   "name": "Admin desbloquear usuario",
@@ -265,7 +265,11 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "wJG9evYzeFqz0Lbf",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": null,
   "meta": {
@@ -275,7 +279,7 @@
   "pinData": {},
   "versionId": "e5988716-98af-4917-9a70-b0002326892d",
   "activeVersionId": "e5988716-98af-4917-9a70-b0002326892d",
-  "versionCounter": 53,
+  "versionCounter": 54,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

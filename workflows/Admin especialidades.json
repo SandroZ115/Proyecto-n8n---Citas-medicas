@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-20T18:38:56.674Z",
+  "updatedAt": "2026-10-25T01:19:42.406Z",
   "createdAt": "2026-10-13T06:50:17.104Z",
   "id": "z2CeENSTOgrkBtFY",
   "name": "Admin especialidades",
@@ -504,7 +504,11 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "wJG9evYzeFqz0Lbf",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": null,
   "meta": {
@@ -514,7 +518,7 @@
   "pinData": {},
   "versionId": "6371e911-9a1e-43a0-bcd9-df7e9c089a94",
   "activeVersionId": "6371e911-9a1e-43a0-bcd9-df7e9c089a94",
-  "versionCounter": 133,
+  "versionCounter": 134,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

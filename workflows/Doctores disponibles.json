@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-20T18:35:42.275Z",
+  "updatedAt": "2026-10-25T01:21:16.011Z",
   "createdAt": "2026-10-14T01:19:20.956Z",
   "id": "4VRnLHH2fZZIMAgf",
   "name": "Doctores disponibles",
@@ -315,7 +315,11 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "wJG9evYzeFqz0Lbf",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": null,
   "meta": {
@@ -325,7 +329,7 @@
   "pinData": {},
   "versionId": "258c9559-fd59-4883-84b2-32c41d2194cb",
   "activeVersionId": "258c9559-fd59-4883-84b2-32c41d2194cb",
-  "versionCounter": 65,
+  "versionCounter": 66,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],

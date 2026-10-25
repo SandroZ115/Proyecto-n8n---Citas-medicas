@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-20T18:36:43.311Z",
+  "updatedAt": "2026-10-25T01:22:41.920Z",
   "createdAt": "2026-09-13T23:22:53.247Z",
   "id": "L1Cm3eHutmcqP8Ab",
   "name": "Procesamiento",
@@ -68,7 +68,11 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "wJG9evYzeFqz0Lbf",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
   },
   "staticData": {
     "node:Revisa pendientes": {
@@ -87,7 +91,7 @@
   "pinData": {},
   "versionId": "947b8013-f543-4b04-9940-238f62a88cc4",
   "activeVersionId": "947b8013-f543-4b04-9940-238f62a88cc4",
-  "versionCounter": 16,
+  "versionCounter": 17,
   "triggerCount": 1,
   "sourceWorkflowId": null,
   "tags": [],
