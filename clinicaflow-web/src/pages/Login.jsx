@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { login } from '../services/api'
 import { APP_NAME } from '../config'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Field from '../components/ui/Field'
+import { useToast } from '../components/ui/Toast'
 
 function IconoEscudo() {
   return (
@@ -104,15 +105,20 @@ const DATOS_PANEL = [
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
+  const toast = useToast()
 
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
-  const [codigo, setCodigo] = useState('')
-  const [modoRespaldo, setModoRespaldo] = useState(false)
+  const [codigoApp, setCodigoApp] = useState('')
+  const [codigoRespaldo, setCodigoRespaldo] = useState('')
+  const [usarRespaldo, setUsarRespaldo] = useState(false)
   const [verClave, setVerClave] = useState(false)
   const [errores, setErrores] = useState({})
   const [aviso, setAviso] = useState(null)
   const [enviando, setEnviando] = useState(false)
+
+  const inputRespaldoRef = useRef(null)
+  const inputAppRef = useRef(null)
 
   const vencida = Boolean(location.state?.vencida)
 
@@ -125,18 +131,34 @@ export default function Login() {
     })
   }
 
-  function formatearCodigo(valor) {
-    if (modoRespaldo) {
-      const limpio = valor.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
-      return limpio.length > 4 ? `${limpio.slice(0, 4)}-${limpio.slice(4)}` : limpio
-    }
+  function formatearCodigoApp(valor) {
     return valor.replace(/\D/g, '').slice(0, 6)
   }
 
+  function formatearCodigoRespaldo(valor) {
+    const limpio = valor
+      .toUpperCase()
+      .replace(/[^A-F0-9]/g, '')
+      .slice(0, 8)
+    if (limpio.length <= 4) return limpio
+    return `${limpio.slice(0, 4)}-${limpio.slice(4)}`
+  }
+
   function cambiarModo() {
-    setModoRespaldo((prev) => !prev)
-    setCodigo('')
-    limpiarError('codigo')
+    if (usarRespaldo) {
+      setUsarRespaldo(false)
+      setCodigoRespaldo('')
+      limpiarError('codigo_respaldo')
+      setTimeout(() => {
+        inputAppRef.current?.focus()
+      }, 50)
+    } else {
+      setUsarRespaldo(true)
+      limpiarError('codigo_app')
+      setTimeout(() => {
+        inputRespaldoRef.current?.focus()
+      }, 50)
+    }
   }
 
   function validar() {
@@ -150,12 +172,14 @@ export default function Login() {
       nuevos.password = 'Escribe tu contraseña'
     }
 
-    if (modoRespaldo) {
-      if (!/^[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(codigo)) {
-        nuevos.codigo = 'El código de respaldo debe tener el formato XXXX-XXXX'
+    if (usarRespaldo) {
+      if (!/^[0-9A-F]{4}-[0-9A-F]{4}$/.test(codigoRespaldo)) {
+        nuevos.codigo_respaldo = 'El código de respaldo tiene el formato XXXX-XXXX'
       }
-    } else if (!/^\d{6}$/.test(codigo)) {
-      nuevos.codigo = 'El código debe tener 6 dígitos'
+    } else {
+      if (!/^\d{6}$/.test(codigoApp)) {
+        nuevos.codigo_app = 'El código debe tener 6 dígitos'
+      }
     }
 
     return nuevos
@@ -175,7 +199,9 @@ export default function Login() {
     setEnviando(true)
 
     try {
-      const codigoEnviar = modoRespaldo ? codigo.replace('-', '') : codigo
+      const codigoEnviar = usarRespaldo
+        ? codigoRespaldo.replace('-', '')
+        : codigoApp
       const { status, data } = await login(correo, password, codigoEnviar)
 
       if (status === 200) {
@@ -183,6 +209,9 @@ export default function Login() {
         sessionStorage.setItem('rol', data?.rol ?? '')
         sessionStorage.setItem('expira_en', data?.expira_en ?? '')
         sessionStorage.setItem('correo', data?.correo ?? '')
+        if (usarRespaldo) {
+          toast.success('Iniciaste con un código de respaldo. Cada código sirve una sola vez.')
+        }
         navigate('/dashboard')
         return
       }
@@ -193,7 +222,13 @@ export default function Login() {
           texto:
             'Credenciales inválidas. Revisa tu correo, contraseña y código.',
         })
-        setCodigo('')
+        if (usarRespaldo) {
+          setCodigoRespaldo('')
+          limpiarError('codigo_respaldo')
+        } else {
+          setCodigoApp('')
+          limpiarError('codigo_app')
+        }
         return
       }
 
@@ -306,30 +341,80 @@ export default function Login() {
 
             <Field
               label="Código de autenticación"
-              id="codigo"
-              error={errores.codigo}
+              id="codigo_app"
+              error={errores.codigo_app}
               className="login-campo login-campo-codigo"
             >
               <input
+                ref={inputAppRef}
                 type="text"
-                inputMode={modoRespaldo ? 'text' : 'numeric'}
-                maxLength={modoRespaldo ? 9 : 6}
-                value={codigo}
+                inputMode="numeric"
+                maxLength={6}
+                  value={codigoApp}
                 onChange={(e) => {
-                  setCodigo(formatearCodigo(e.target.value))
-                  limpiarError('codigo')
+                  if (usarRespaldo) {
+                    return
+                  }
+                  setCodigoApp(formatearCodigoApp(e.target.value))
+                  limpiarError('codigo_app')
                 }}
                 autoComplete="one-time-code"
                 className="login-codigo"
+                disabled={usarRespaldo}
+                aria-disabled={usarRespaldo}
               />
             </Field>
 
+            {usarRespaldo && (
+              <p className="login-respaldo-nota">Estás usando un código de respaldo</p>
+            )}
+
             <div className="login-codigo-enlace">
-              <button type="button" className="login-enlace" onClick={cambiarModo}>
-                {modoRespaldo
-                  ? 'Usar el código de la aplicación'
+              <button
+                type="button"
+                className="login-enlace"
+                onClick={cambiarModo}
+                aria-expanded={usarRespaldo}
+                aria-controls="codigo-respaldo-contenedor"
+              >
+                {usarRespaldo
+                  ? 'Volver al código de la aplicación'
                   : 'Usar un código de respaldo'}
               </button>
+            </div>
+
+            <div
+              id="codigo-respaldo-contenedor"
+              className={`login-respaldo-contenedor${usarRespaldo ? ' login-respaldo-contenedor--abierto' : ''}`}
+              aria-hidden={!usarRespaldo}
+            >
+              <div className="login-respaldo-contenedor__interior">
+                <Field
+                  label="Código de respaldo"
+                  id="codigo_respaldo"
+                  error={errores.codigo_respaldo}
+                  className="login-campo login-campo-codigo login-campo-codigo-respaldo"
+                  help="Es uno de los 8 códigos que recibiste al crear tu cuenta. Cada uno sirve una sola vez."
+                >
+                <input
+                  ref={inputRespaldoRef}
+                  type="text"
+                  inputMode="text"
+                  maxLength={9}
+                  value={codigoRespaldo}
+                  onChange={(e) => {
+                    setCodigoRespaldo(formatearCodigoRespaldo(e.target.value))
+                    limpiarError('codigo_respaldo')
+                  }}
+                  autoComplete="off"
+                  spellCheck={false}
+                  autoCapitalize="characters"
+                  className="login-codigo"
+                  tabIndex={usarRespaldo ? 0 : -1}
+                  placeholder="XXXX-XXXX"
+                />
+                </Field>
+              </div>
             </div>
 
             <Button type="submit" loading={enviando} className="login-boton">

@@ -1029,6 +1029,46 @@ a:focus-visible {
   text-indent: 0.4em;
 }
 
+.login-campo-codigo .ui-field__control:disabled {
+  opacity: 0.6;
+  background: #f5f5f5;
+  color: var(--muted);
+}
+
+.login-campo-codigo-respaldo .ui-field__control {
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+}
+
+.login-respaldo-nota {
+  margin: -8px 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.login-respaldo-contenedor {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 200ms ease, opacity 200ms ease;
+}
+
+.login-respaldo-contenedor--abierto {
+  max-height: 260px;
+  opacity: 1;
+}
+
+.login-respaldo-contenedor__interior {
+  padding-top: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-respaldo-contenedor {
+    transition: none;
+  }
+}
+
 .login-codigo-enlace {
   margin: -8px 0 18px;
 }
