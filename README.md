@@ -18,10 +18,10 @@ Los documentos están en PDF, en una carpeta de Google Drive compartida con el d
 
 | Documento | Qué contiene | Enlace |
 |---|---|---|
-| **Documento técnico** | Resumen ejecutivo, arquitectura, modelo de datos, interfaz, pruebas de integración, seguridad y conclusiones | [Abrir documento](https://drive.google.com/file/d/1o3g-1RUmaAGZZICeiKsmKR40GdSN47pI/view?usp=drive_link) |
-| **Especificación de workflows** | Tabla por cada uno de los 20 workflows, con sus nodos, el tipo de cada nodo y su descripción | [Abrir documento](https://drive.google.com/file/d/1XEfpzZJGVfhnrVkKyUoaUppnfuPPwf52/view?usp=drive_link) |
-| **Pruebas unitarias** | Pruebas de la lógica de los nodos Code: casos, entradas y resultados | [Abrir documento](https://drive.google.com/file/d/12xEEZcE83wj0M5FA-paX5RVKGlLxDCdz/view?usp=drive_link) |
-| **Video de demostración** | Un caso normal y un caso de error | COMPLETAR: enlace de Drive |
+| **Documento técnico** | Resumen ejecutivo, arquitectura, modelo de datos, interfaz, pruebas de integración, seguridad y conclusiones | [Abrir documento](https://drive.google.com/file/d/1MUSNixTljycacKOHm10ESmO8HJULsUnj/view?usp=drive_link) |
+| **Especificación de workflows** | Tabla por cada uno de los 20 workflows, con sus nodos, el tipo de cada nodo y su descripción | [Abrir documento](https://drive.google.com/file/d/1i0fMKIqBTy1SbdlAhjmK1sIrH2IDdc8z/view?usp=drive_link) |
+| **Pruebas unitarias** | Pruebas de la lógica de los nodos Code: casos, entradas y resultados | [Abrir documento](https://drive.google.com/file/d/1UQY5iGso-3_KwIfYymvTi972dRxRrQST/view?usp=drive_link) |
+| **Video de demostración** | Un caso normal y un caso de error | [Abrir video](https://drive.google.com/file/d/1Pwi6xZf_nT2GoNxN0qLDf30dOwxMyBFl/view?usp=drive_link) |
 
 La guía de despliegue está en este README, en la sección **Puesta en marcha**.
 
